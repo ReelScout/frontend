@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:frontend/config/dio_config.dart';
 import '../services/auth_service.dart';
 import '../dto/request/user_login_request_dto.dart';
+import '../dto/response/custom_response_dto.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -24,8 +26,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
     // Initialize Dio and AuthService
-    final dio = Dio();
-    _authService = AuthService(dio, baseUrl: 'http://localhost:8080/api/v1/auth');
+    final Dio dio = DioConfig.instance.dio;
+    _authService = AuthService(dio, baseUrl: '${dio.options.baseUrl}/auth');
   }
 
   @override
@@ -68,14 +70,26 @@ class _LoginScreenState extends State<LoginScreen> {
     } on DioException catch (e) {
       String errorMessage = 'Login failed';
       
-      if (e.response?.statusCode == 401) {
-        errorMessage = 'Invalid username or password';
-      } else if (e.response?.statusCode == 404) {
-        errorMessage = 'Service not available';
-      } else if (e.type == DioExceptionType.connectionTimeout) {
-        errorMessage = 'Connection timeout';
-      } else if (e.type == DioExceptionType.connectionError) {
-        errorMessage = 'No internet connection';
+      // Try to extract message from CustomResponseDto in the response
+      if (e.response?.data != null) {
+        try {
+          final customResponse = CustomResponseDto.fromJson(e.response!.data);
+          errorMessage = customResponse.message;
+        } catch (_) {
+          // Fallback to connection-specific errors if parsing fails
+          if (e.type == DioExceptionType.connectionTimeout) {
+            errorMessage = 'Connection timeout';
+          } else if (e.type == DioExceptionType.connectionError) {
+            errorMessage = 'No internet connection';
+          }
+        }
+      } else {
+        // Handle connection errors when there's no response data
+        if (e.type == DioExceptionType.connectionTimeout) {
+          errorMessage = 'Connection timeout';
+        } else if (e.type == DioExceptionType.connectionError) {
+          errorMessage = 'No internet connection';
+        }
       }
       
       setState(() {
@@ -83,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'An unexpected error occurred';
+        _errorMessage = 'An unexpected error occurred: $e';
       });
     } finally {
       if (mounted) {
