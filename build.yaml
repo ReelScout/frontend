@@ -1,0 +1,9 @@
+targets:
+  $default:
+    builders:
+      source_gen:combining_builder:
+        options:
+          build_extensions:
+            '^lib/dto/{{}}.dart': 'lib/dto/generated/{{}}.g.dart'
+            '^lib/model/{{}}.dart': 'lib/model/generated/{{}}.g.dart'
+            '^lib/services/{{}}.dart': 'lib/services/generated/{{}}.g.dart'
