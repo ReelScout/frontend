@@ -7,15 +7,17 @@ class TokenService {
 
   final FlutterSecureStorage secureStorage;
 
+  static const String _accessTokenKey = 'accessToken';
+
   Future<String?> getToken() async {
-    return await secureStorage.read(key: 'accessToken');
+    return await secureStorage.read(key: _accessTokenKey);
   }
 
   Future<void> saveToken(String token) async {
-    await secureStorage.write(key: 'accessToken', value: token);
+    await secureStorage.write(key: _accessTokenKey, value: token);
   }
 
   Future<void> removeToken() async {
-    await secureStorage.delete(key: 'accessToken');
+    await secureStorage.delete(key: _accessTokenKey);
   }
 }

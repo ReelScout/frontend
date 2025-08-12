@@ -9,7 +9,7 @@ class TokenInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
-    // Get the stored access token
+    // Get the stored access token from the secure storage
     final token = await tokenService.getToken();
     
     // Add the token to the request headers if it exists
@@ -22,8 +22,8 @@ class TokenInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    // If the JWT token is not valid (status code 498)
-    if (err.response?.statusCode == 498) {
+    // If the JWT token is not valid
+    if (err.response?.statusCode == HttpStatus.unauthorized) {
       // TODO: Implement
     }
 
