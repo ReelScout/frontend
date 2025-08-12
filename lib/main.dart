@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/config/injection_container.dart';
 import 'screens/login_screen.dart';
 
 void main() {
+  configureDependencies();
   runApp(const ReelScoutApp());
 }
 

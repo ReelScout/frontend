@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import 'package:frontend/config/dio_config.dart';
+import '../config/injection_container.dart';
 import '../services/auth_service.dart';
 import '../dto/request/user_login_request_dto.dart';
 import '../dto/response/custom_response_dto.dart';
@@ -20,14 +20,11 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   String? _errorMessage;
 
-  late AuthService _authService;
+  final AuthService _authService = getIt<AuthService>();
 
   @override
   void initState() {
     super.initState();
-    // Initialize Dio and AuthService
-    final Dio dio = DioConfig.instance.dio;
-    _authService = AuthService(dio, baseUrl: '${dio.options.baseUrl}/auth');
   }
 
   @override

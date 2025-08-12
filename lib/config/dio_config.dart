@@ -2,13 +2,19 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend/interceptor/token_interceptor.dart';
 import 'package:frontend/services/token_service.dart';
+import 'package:injectable/injectable.dart';
 
-class DioConfig {
-  static DioConfig? _instance;
-  late Dio _dio;
+@module
+abstract class DioConfig {
+  @singleton
+  FlutterSecureStorage get secureStorage => const FlutterSecureStorage();
 
-  DioConfig._internal() {
-    _dio = Dio(BaseOptions(
+  @singleton
+  TokenService tokenService(FlutterSecureStorage secureStorage) => TokenService(secureStorage: secureStorage);
+
+  @singleton
+  Dio dio(TokenService tokenService) {
+    final dio = Dio(BaseOptions(
       baseUrl: 'http://localhost:8080/api/v1',
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 15),
@@ -17,13 +23,8 @@ class DioConfig {
     ));
 
     // Add interceptors
-    _dio.interceptors.add(TokenInterceptor(tokenService: TokenService(secureStorage: FlutterSecureStorage())));
-  }
+    dio.interceptors.add(TokenInterceptor(tokenService: tokenService));
 
-  static DioConfig get instance {
-    _instance ??= DioConfig._internal();
-    return _instance!;
+    return dio;
   }
-
-  Dio get dio => _dio;
 }
