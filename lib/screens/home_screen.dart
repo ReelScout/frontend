@@ -1,42 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../components/bottom_navbar.dart';
 import '../pages/home_page.dart';
 import '../pages/search_page.dart';
 import '../pages/profile_page.dart';
+import '../bloc/navigation/navigation_bloc.dart';
+import '../bloc/navigation/navigation_event.dart';
+import '../bloc/navigation/navigation_state.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends HookWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
-
-  final List<Widget> _screens = [
-    const HomePage(),
-    const SearchPage(),
-    const ProfilePage(),
-  ];
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens,
-      ),
-      bottomNavigationBar: BottomNavbar(
-        selectedIndex: _selectedIndex,
-        onItemTapped: _onItemTapped,
+    final screens = useMemoized(() => [
+      const HomePage(),
+      const SearchPage(),
+      const ProfilePage(),
+    ]);
+
+    return BlocProvider(
+      create: (context) => NavigationBloc(),
+      child: BlocBuilder<NavigationBloc, NavigationState>(
+        builder: (context, state) {
+          return Scaffold(
+            backgroundColor: Colors.grey[50],
+            body: IndexedStack(
+              index: state.selectedIndex,
+              children: screens,
+            ),
+            bottomNavigationBar: BottomNavbar(
+              selectedIndex: state.selectedIndex,
+              onItemTapped: (index) {
+                context.read<NavigationBloc>().add(TabSelected(index: index));
+              },
+            ),
+          );
+        },
       ),
     );
   }

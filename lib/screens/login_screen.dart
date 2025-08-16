@@ -1,108 +1,107 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
-import '../config/injection_container.dart';
-import '../services/auth_service.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../dto/request/user_login_request_dto.dart';
-import '../dto/response/custom_response_dto.dart';
+import '../bloc/auth/auth_bloc.dart';
+import '../bloc/auth/auth_event.dart';
+import '../bloc/auth/auth_state.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends HookWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
-}
+  Widget build(BuildContext context) {
+    final formKey = useMemoized(() => GlobalKey<FormState>());
+    final usernameController = useTextEditingController();
+    final passwordController = useTextEditingController();
+    final obscurePassword = useState(true);
 
-class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _isLoading = false;
-  bool _obscurePassword = true;
-  String? _errorMessage;
+    void login(BuildContext context) {
+      if (!formKey.currentState!.validate()) {
+        return;
+      }
 
-  final AuthService _authService = getIt<AuthService>();
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _usernameController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
       final request = UserLoginRequestDto(
-        username: _usernameController.text.trim(),
-        password: _passwordController.text,
+        username: usernameController.text.trim(),
+        password: passwordController.text,
       );
 
-      await _authService.login(request);
-      
-      // Handle successful login
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Login successful!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        
-        // TODO: Navigate to home screen or save token
-        // For now, just show success message
-      }
-    } on DioException catch (e) {
-      String errorMessage = 'Login failed';
-      
-      // Try to extract message from CustomResponseDto in the response
-      if (e.response?.data != null) {
-        try {
-          final customResponse = CustomResponseDto.fromJson(e.response!.data);
-          errorMessage = customResponse.message;
-        } catch (_) {
-          // Fallback to connection-specific errors if parsing fails
-          if (e.type == DioExceptionType.connectionTimeout) {
-            errorMessage = 'Connection timeout';
-          } else if (e.type == DioExceptionType.connectionError) {
-            errorMessage = 'No internet connection';
-          }
-        }
-      } else {
-        // Handle connection errors when there's no response data
-        if (e.type == DioExceptionType.connectionTimeout) {
-          errorMessage = 'Connection timeout';
-        } else if (e.type == DioExceptionType.connectionError) {
-          errorMessage = 'No internet connection';
-        }
-      }
-      
-      setState(() {
-        _errorMessage = errorMessage;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'An unexpected error occurred: $e';
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      context.read<AuthBloc>().add(LoginRequested(loginRequest: request));
     }
+
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is AuthSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message ?? 'Login successful!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // TODO: Navigate to home screen
+        } else if (state is AuthFailure) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.error),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+      child: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, state) {
+          final isLoading = state is AuthLoading;
+          
+          return _buildLoginForm(
+            context: context,
+            formKey: formKey,
+            usernameController: usernameController,
+            passwordController: passwordController,
+            obscurePassword: obscurePassword,
+            isLoading: isLoading,
+            onLogin: () => login(context),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildLoginForm({
+    required BuildContext context,
+    required GlobalKey<FormState> formKey,
+    required TextEditingController usernameController,
+    required TextEditingController passwordController,
+    required ValueNotifier<bool> obscurePassword,
+    required bool isLoading,
+    required VoidCallback onLogin,
+  }) {
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 60),
+              _buildLogo(),
+              const SizedBox(height: 48),
+              _buildLoginCard(
+                context: context,
+                formKey: formKey,
+                usernameController: usernameController,
+                passwordController: passwordController,
+                obscurePassword: obscurePassword,
+                isLoading: isLoading,
+                onLogin: onLogin,
+              ),
+              const SizedBox(height: 24),
+              _buildFooter(),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   String? _validateUsername(String? value) {
@@ -125,235 +124,184 @@ class _LoginScreenState extends State<LoginScreen> {
     return null;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // App Logo/Title
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.movie_filter,
-                    size: 60,
-                    color: Colors.white,
-                  ),
+  Widget _buildLogo() {
+    return Container(
+      width: 120,
+      height: 120,
+      decoration: BoxDecoration(
+        color: const Color(0xFF1976D2),
+        shape: BoxShape.circle,
+      ),
+      child: const Icon(
+        Icons.movie_filter,
+        size: 60,
+        color: Colors.white,
+      ),
+    );
+  }
+
+  Widget _buildLoginCard({
+    required BuildContext context,
+    required GlobalKey<FormState> formKey,
+    required TextEditingController usernameController,
+    required TextEditingController passwordController,
+    required ValueNotifier<bool> obscurePassword,
+    required bool isLoading,
+    required VoidCallback onLogin,
+  }) {
+    return Card(
+      elevation: 8,
+      shadowColor: Colors.black26,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'ReelScout',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF1976D2),
                 ),
-                const SizedBox(height: 32),
-                
-                // App Name
-                Text(
-                  'ReelScout',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).primaryColor,
-                  ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Welcome back! Please sign in to continue.',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
                 ),
-                const SizedBox(height: 8),
-                
-                Text(
-                  'Welcome back! Please sign in to continue.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              TextFormField(
+                controller: usernameController,
+                validator: _validateUsername,
+                decoration: InputDecoration(
+                  labelText: 'Username',
+                  prefixIcon: const Icon(Icons.person),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  textAlign: TextAlign.center,
+                  filled: true,
+                  fillColor: Colors.grey[50],
                 ),
-                const SizedBox(height: 48),
-                
-                // Login Form
-                Card(
-                  elevation: 8,
-                  shadowColor: Colors.black26,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Username Field
-                          TextFormField(
-                            controller: _usernameController,
-                            validator: _validateUsername,
-                            decoration: InputDecoration(
-                              labelText: 'Username',
-                              prefixIcon: const Icon(Icons.person),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              filled: true,
-                              fillColor: Colors.grey[50],
-                            ),
-                            textInputAction: TextInputAction.next,
-                          ),
-                          const SizedBox(height: 16),
-                          
-                          // Password Field
-                          TextFormField(
-                            controller: _passwordController,
-                            validator: _validatePassword,
-                            obscureText: _obscurePassword,
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                              prefixIcon: const Icon(Icons.lock),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility
-                                      : Icons.visibility_off,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _obscurePassword = !_obscurePassword;
-                                  });
-                                },
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              filled: true,
-                              fillColor: Colors.grey[50],
-                            ),
-                            textInputAction: TextInputAction.done,
-                            onFieldSubmitted: (_) => _login(),
-                          ),
-                          const SizedBox(height: 8),
-                          
-                          // Forgot Password
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () {
-                                // TODO: Implement forgot password
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Forgot password feature coming soon!'),
-                                  ),
-                                );
-                              },
-                              child: Text(
-                                'Forgot Password?',
-                                style: TextStyle(
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          
-                          // Error Message
-                          if (_errorMessage != null)
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              margin: const EdgeInsets.only(bottom: 16),
-                              decoration: BoxDecoration(
-                                color: Colors.red[50],
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.red[200]!),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.error_outline,
-                                    color: Colors.red[600],
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      _errorMessage!,
-                                      style: TextStyle(
-                                        color: Colors.red[600],
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          
-                          // Login Button
-                          ElevatedButton(
-                            onPressed: _isLoading ? null : _login,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).primaryColor,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 4,
-                            ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                    ),
-                                  )
-                                : const Text(
-                                    'Sign In',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                          ),
-                        ],
+                textInputAction: TextInputAction.next,
+              ),
+              const SizedBox(height: 16),
+              HookBuilder(
+                builder: (context) {
+                  return TextFormField(
+                    controller: passwordController,
+                    validator: _validatePassword,
+                    obscureText: obscurePassword.value,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      prefixIcon: const Icon(Icons.lock),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscurePassword.value
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          obscurePassword.value = !obscurePassword.value;
+                        },
                       ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                    ),
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => onLogin(),
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Forgot password feature coming soon!'),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    'Forgot Password?',
+                    style: TextStyle(
+                      color: const Color(0xFF1976D2),
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
-                
-                // Sign Up Option
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Don't have an account? ",
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        // TODO: Navigate to sign up screen
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Sign up feature coming soon!'),
-                          ),
-                        );
-                      },
-                      child: Text(
-                        'Sign Up',
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: isLoading ? null : onLogin,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1976D2),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 4,
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Text(
+                        'Sign In',
                         style: TextStyle(
-                          color: Theme.of(context).primaryColor,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildFooter() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          "Don't have an account? ",
+          style: TextStyle(color: Colors.grey[600]),
+        ),
+        TextButton(
+          onPressed: () {
+            // TODO: Navigate to sign up screen
+          },
+          child: Text(
+            'Sign Up',
+            style: TextStyle(
+              color: const Color(0xFF1976D2),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
