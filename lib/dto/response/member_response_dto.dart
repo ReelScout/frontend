@@ -24,5 +24,6 @@ class MemberResponseDto extends UserResponseDto {
   factory MemberResponseDto.fromJson(Map<String, dynamic> json) =>
       _$MemberResponseDtoFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$MemberResponseDtoToJson(this);
 }

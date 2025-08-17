@@ -3,6 +3,7 @@ import 'package:retrofit/retrofit.dart';
 import 'package:dio/dio.dart';
 
 import '../dto/request/user_login_request_dto.dart';
+import '../dto/request/user_request_dto.dart';
 
 part 'generated/auth_service.g.dart';
 
@@ -12,4 +13,7 @@ abstract class AuthService {
 
   @POST('/login')
   Future<UserLoginResponseDto> login(@Body() UserLoginRequestDto request);
+
+  @POST('/register')
+  Future<UserLoginRequestDto> register(@Body() UserRequestDto userRequestDto);
 }
