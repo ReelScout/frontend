@@ -7,6 +7,7 @@ import '../bloc/auth/auth_event.dart';
 import '../bloc/user_profile/user_profile_bloc.dart';
 import '../bloc/user_profile/user_profile_event.dart';
 import '../bloc/user_profile/user_profile_state.dart';
+import '../components/profile_avatar.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -72,18 +73,13 @@ class ProfilePage extends StatelessWidget {
             padding: const EdgeInsets.all(24.0),
             child: Column(
               children: [
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.person,
-                    size: 40,
-                    color: Theme.of(context).primaryColor,
-                  ),
+                ProfileAvatar(
+                  size: 80,
+                  base64Image: userProfileState is UserProfileLoaded 
+                      ? userProfileState.user.base64Image 
+                      : null,
+                  fallbackColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                  fallbackIconColor: Theme.of(context).primaryColor,
                 ),
                 const SizedBox(height: 16),
                 
