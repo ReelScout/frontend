@@ -19,11 +19,11 @@ abstract class UserResponseDto extends EntityResponseDto {
 
   factory UserResponseDto.fromJson(Map<String, dynamic> json) {
     switch (json['role']) {
-      case Role.productionCompany: return ProductionCompanyResponseDto.fromJson(json);
-      case Role.member: return MemberResponseDto.fromJson(json);
-      case Role.verifiedMember: return MemberResponseDto.fromJson(json);
-      case Role.moderator: return MemberResponseDto.fromJson(json);
-      case Role.admin: return MemberResponseDto.fromJson(json);
+      case 'PRODUCTION_COMPANY': return ProductionCompanyResponseDto.fromJson(json);
+      case 'MEMBER': return MemberResponseDto.fromJson(json);
+      case 'VERIFIED_MEMBER': return MemberResponseDto.fromJson(json);
+      case 'MODERATOR': return MemberResponseDto.fromJson(json);
+      case 'ADMIN': return MemberResponseDto.fromJson(json);
       default: throw Exception('Unknown role: ${json['role']}');
     }
   }

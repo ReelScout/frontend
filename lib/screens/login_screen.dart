@@ -38,7 +38,8 @@ class LoginScreen extends HookWidget {
               backgroundColor: Colors.green,
             ),
           );
-          // TODO: Navigate to home screen
+          // Navigate back to previous screen after successful login
+          Navigator.of(context).pop();
         } else if (state is AuthFailure) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

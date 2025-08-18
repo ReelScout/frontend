@@ -3,9 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend/config/injection_container.dart';
 import 'screens/home_screen.dart';
 import 'bloc/auth/auth_bloc.dart';
+import 'bloc/auth/auth_event.dart';
 import 'bloc/navigation/navigation_bloc.dart';
+import 'bloc/user_profile/user_profile_bloc.dart';
 import 'services/auth_service.dart';
 import 'services/token_service.dart';
+import 'services/user_service.dart';
 
 void main() {
   configureDependencies();
@@ -23,6 +26,11 @@ class ReelScoutApp extends StatelessWidget {
           create: (context) => AuthBloc(
             authService: getIt<AuthService>(),
             tokenService: getIt<TokenService>(),
+          )..add(AuthCheckRequested()),
+        ),
+        BlocProvider<UserProfileBloc>(
+          create: (context) => UserProfileBloc(
+            userService: getIt<UserService>(),
           ),
         ),
         BlocProvider<NavigationBloc>(

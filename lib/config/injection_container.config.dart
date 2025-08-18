@@ -15,6 +15,7 @@ import 'package:frontend/config/dio_config.dart' as _i456;
 import 'package:frontend/config/service_module.dart' as _i316;
 import 'package:frontend/services/auth_service.dart' as _i269;
 import 'package:frontend/services/token_service.dart' as _i768;
+import 'package:frontend/services/user_service.dart' as _i625;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
 
@@ -34,6 +35,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.singleton<_i361.Dio>(() => dioConfig.dio(gh<_i768.TokenService>()));
     gh.singleton<_i269.AuthService>(
       () => serviceModule.authService(gh<_i361.Dio>()),
+    );
+    gh.singleton<_i625.UserService>(
+      () => serviceModule.userService(gh<_i361.Dio>()),
     );
     return this;
   }
