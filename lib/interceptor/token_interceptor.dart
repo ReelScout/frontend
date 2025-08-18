@@ -22,9 +22,13 @@ class TokenInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    // If the JWT token is not valid
+    // If the JWT token is not valid (401 Unauthorized)
     if (err.response?.statusCode == HttpStatus.unauthorized) {
-      // TODO: Implement
+      // Clear the stored token since it's invalid/expired
+      await tokenService.removeToken();
+      
+      // Continue with the error - the UI will handle the logout state
+      // when it detects no valid token during auth checks
     }
 
     super.onError(err, handler);
