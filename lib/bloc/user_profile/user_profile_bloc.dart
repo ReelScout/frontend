@@ -25,18 +25,8 @@ class UserProfileBloc extends Bloc<UserProfileEvent, UserProfileState> {
       final user = await _userService.getCurrentUser();
       emit(UserProfileLoaded(user: user));
     } on DioException catch (e) {
-      String errorMessage = 'Failed to load profile';
-      
-      if (e.response?.statusCode == 401) {
-        errorMessage = 'Authentication required';
-      } else if (e.response?.statusCode == 403) {
-        errorMessage = 'Access denied';
-      } else if (e.type == DioExceptionType.connectionTimeout) {
-        errorMessage = 'Connection timeout';
-      } else if (e.type == DioExceptionType.connectionError) {
-        errorMessage = 'No internet connection';
-      }
-      
+      // Use interceptor's standardized error messages
+      final errorMessage = e.error?.toString() ?? 'Failed to load profile';
       emit(UserProfileError(message: errorMessage));
     } catch (e) {
       emit(UserProfileError(message: 'An unexpected error occurred: $e'));

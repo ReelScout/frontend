@@ -40,27 +40,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         message: 'Login successful!',
       ));
     } on DioException catch (e) {
-      String errorMessage = 'Login failed';
+      // Use interceptor's standardized error messages for common errors
+      String errorMessage = e.error?.toString() ?? 'Login failed';
       
-      // Try to extract message from CustomResponseDto in the response
+      // Only handle login-specific API error responses
       if (e.response?.data != null) {
         try {
           final customResponse = CustomResponseDto.fromJson(e.response!.data);
           errorMessage = customResponse.message;
         } catch (_) {
-          // Fallback to connection-specific errors if parsing fails
-          if (e.type == DioExceptionType.connectionTimeout) {
-            errorMessage = 'Connection timeout';
-          } else if (e.type == DioExceptionType.connectionError) {
-            errorMessage = 'No internet connection';
-          }
-        }
-      } else {
-        // Handle connection errors when there's no response data
-        if (e.type == DioExceptionType.connectionTimeout) {
-          errorMessage = 'Connection timeout';
-        } else if (e.type == DioExceptionType.connectionError) {
-          errorMessage = 'No internet connection';
+          // Use interceptor's standardized error message
+          errorMessage = e.error?.toString() ?? 'Login failed';
         }
       }
       

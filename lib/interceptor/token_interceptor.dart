@@ -22,13 +22,63 @@ class TokenInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    // If the JWT token is not valid (401 Unauthorized)
+    // Handle authentication errors
     if (err.response?.statusCode == HttpStatus.unauthorized) {
-      // Clear the stored token since it's invalid/expired
       await tokenService.removeToken();
-      
-      // Continue with the error - the UI will handle the logout state
-      // when it detects no valid token during auth checks
+      // Transform error to standardized format
+      final standardizedError = DioException(
+        requestOptions: err.requestOptions,
+        response: err.response,
+        type: err.type,
+        error: 'Authentication expired. Please login again.',
+      );
+      handler.next(standardizedError);
+      return;
+    }
+
+    // Handle forbidden access
+    if (err.response?.statusCode == HttpStatus.forbidden) {
+      final standardizedError = DioException(
+        requestOptions: err.requestOptions,
+        response: err.response,
+        type: err.type,
+        error: 'Access denied',
+      );
+      handler.next(standardizedError);
+      return;
+    }
+
+    // Handle connection errors
+    if (err.type == DioExceptionType.connectionTimeout) {
+      final standardizedError = DioException(
+        requestOptions: err.requestOptions,
+        type: err.type,
+        error: 'Connection timeout',
+      );
+      handler.next(standardizedError);
+      return;
+    }
+
+    if (err.type == DioExceptionType.connectionError) {
+      final standardizedError = DioException(
+        requestOptions: err.requestOptions,
+        type: err.type,
+        error: 'No internet connection',
+      );
+      handler.next(standardizedError);
+      return;
+    }
+
+    // Handle server errors
+    if (err.response?.statusCode != null && err.response!.statusCode! >= 500) {
+      final standardizedError = DioException(
+        requestOptions: err.requestOptions,
+        response: err.response,
+        type: err.type,
+        error: 'Server error. Please try again later.',
+      );
+      handler.next(standardizedError);
+      return;
     }
 
     super.onError(err, handler);
