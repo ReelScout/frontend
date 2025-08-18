@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../screens/login_screen.dart';
+import '../bloc/auth/auth_bloc.dart';
+import '../bloc/auth/auth_state.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -49,16 +52,25 @@ class HomePage extends StatelessWidget {
                     ],
                   ),
                 ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
-                      ),
-                    );
+                BlocBuilder<AuthBloc, AuthState>(
+                  builder: (context, state) {
+                    // Only show sign-in button when user is not authenticated
+                    if (state is! AuthSuccess) {
+                      return TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginScreen(),
+                            ),
+                          );
+                        },
+                        child: const Text('Sign In'),
+                      );
+                    }
+                    // Return empty container when user is logged in
+                    return const SizedBox.shrink();
                   },
-                  child: const Text('Sign In'),
                 ),
               ],
             ),
