@@ -10,10 +10,15 @@ abstract class DioConfig {
   FlutterSecureStorage get secureStorage => const FlutterSecureStorage();
 
   @singleton
-  TokenService tokenService(FlutterSecureStorage secureStorage) => TokenService(secureStorage: secureStorage);
+  TokenService tokenService(FlutterSecureStorage secureStorage) =>
+      TokenService(secureStorage: secureStorage);
 
   @singleton
-  Dio dio(TokenService tokenService) {
+  TokenInterceptor tokenInterceptor(TokenService tokenService) =>
+      TokenInterceptor(tokenService: tokenService);
+
+  @singleton
+  Dio dio(TokenInterceptor tokenInterceptor) {
     final dio = Dio(BaseOptions(
       baseUrl: 'http://localhost:8080/api/v1',
       connectTimeout: const Duration(seconds: 15),
@@ -22,8 +27,7 @@ abstract class DioConfig {
       responseType: ResponseType.json,
     ));
 
-    // Add interceptors
-    dio.interceptors.add(TokenInterceptor(tokenService: tokenService));
+    dio.interceptors.add(tokenInterceptor);
 
     return dio;
   }

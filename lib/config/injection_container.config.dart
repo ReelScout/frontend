@@ -13,6 +13,7 @@ import 'package:dio/dio.dart' as _i361;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart' as _i558;
 import 'package:frontend/config/dio_config.dart' as _i456;
 import 'package:frontend/config/service_module.dart' as _i316;
+import 'package:frontend/interceptor/token_interceptor.dart' as _i746;
 import 'package:frontend/services/auth_service.dart' as _i269;
 import 'package:frontend/services/token_service.dart' as _i768;
 import 'package:frontend/services/user_service.dart' as _i625;
@@ -32,7 +33,10 @@ extension GetItInjectableX on _i174.GetIt {
     gh.singleton<_i768.TokenService>(
       () => dioConfig.tokenService(gh<_i558.FlutterSecureStorage>()),
     );
-    gh.singleton<_i361.Dio>(() => dioConfig.dio(gh<_i768.TokenService>()));
+    gh.singleton<_i746.TokenInterceptor>(
+      () => dioConfig.tokenInterceptor(gh<_i768.TokenService>()),
+    );
+    gh.singleton<_i361.Dio>(() => dioConfig.dio(gh<_i746.TokenInterceptor>()));
     gh.singleton<_i269.AuthService>(
       () => serviceModule.authService(gh<_i361.Dio>()),
     );
