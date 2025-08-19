@@ -8,6 +8,7 @@ import '../bloc/user_profile/user_profile_bloc.dart';
 import '../bloc/user_profile/user_profile_event.dart';
 import '../bloc/user_profile/user_profile_state.dart';
 import '../components/profile_avatar.dart';
+import '../components/password_change_helper.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -155,6 +156,30 @@ class ProfilePage extends StatelessWidget {
                 ],
                 
                 const SizedBox(height: 24),
+                
+                // Change Password Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      await PasswordChangeHelper.showPasswordChangeDialog(context);
+                    },
+                    icon: const Icon(Icons.key),
+                    label: const Text('Change Password'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      backgroundColor: Theme.of(context).primaryColor,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 12),
+                
+                // Sign Out Button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
