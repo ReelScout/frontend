@@ -9,6 +9,7 @@ import 'bloc/user_profile/user_profile_bloc.dart';
 import 'services/auth_service.dart';
 import 'services/token_service.dart';
 import 'services/user_service.dart';
+import 'styles/app_theme.dart';
 
 void main() {
   configureDependencies();
@@ -40,38 +41,7 @@ class ReelScoutApp extends StatelessWidget {
       child: MaterialApp(
         title: 'ReelScout',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          primaryColor: const Color(0xFF1976D2),
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF1976D2),
-            brightness: Brightness.light,
-          ),
-          useMaterial3: true,
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Color(0xFF1976D2),
-            foregroundColor: Colors.white,
-            elevation: 4,
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1976D2),
-              foregroundColor: Colors.white,
-            ),
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Color(0xFF1976D2),
-                width: 2,
-              ),
-            ),
-          ),
-        ),
+        theme: AppTheme.lightTheme,
         home: const HomeScreen(),
       ),
     );

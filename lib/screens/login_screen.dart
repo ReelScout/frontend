@@ -5,6 +5,7 @@ import '../dto/request/user_login_request_dto.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
 import '../bloc/auth/auth_state.dart';
+import '../styles/app_colors.dart';
 
 class LoginScreen extends HookWidget {
   const LoginScreen({super.key});
@@ -35,7 +36,7 @@ class LoginScreen extends HookWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message ?? 'Login successful!'),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.success,
             ),
           );
           // Navigate back to previous screen after successful login
@@ -44,7 +45,7 @@ class LoginScreen extends HookWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.error),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
             ),
           );
         }
@@ -77,7 +78,7 @@ class LoginScreen extends HookWidget {
     required VoidCallback onLogin,
   }) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -130,13 +131,13 @@ class LoginScreen extends HookWidget {
       width: 120,
       height: 120,
       decoration: BoxDecoration(
-        color: const Color(0xFF1976D2),
+        color: AppColors.primary,
         shape: BoxShape.circle,
       ),
       child: const Icon(
         Icons.movie_filter,
         size: 60,
-        color: Colors.white,
+        color: AppColors.white,
       ),
     );
   }
@@ -152,7 +153,7 @@ class LoginScreen extends HookWidget {
   }) {
     return Card(
       elevation: 8,
-      shadowColor: Colors.black26,
+      shadowColor: AppColors.shadow,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
@@ -168,7 +169,7 @@ class LoginScreen extends HookWidget {
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF1976D2),
+                  color: AppColors.primary,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -176,7 +177,7 @@ class LoginScreen extends HookWidget {
               Text(
                 'Welcome back! Please sign in to continue.',
                 style: TextStyle(
-                  color: Colors.grey[600],
+                  color: AppColors.textSecondary,
                   fontSize: 14,
                 ),
                 textAlign: TextAlign.center,
@@ -192,7 +193,7 @@ class LoginScreen extends HookWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
-                  fillColor: Colors.grey[50],
+                  fillColor: AppColors.inputBackground,
                 ),
                 textInputAction: TextInputAction.next,
               ),
@@ -220,7 +221,7 @@ class LoginScreen extends HookWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
-                      fillColor: Colors.grey[50],
+                      fillColor: AppColors.inputBackground,
                     ),
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => onLogin(),
@@ -241,7 +242,7 @@ class LoginScreen extends HookWidget {
                   child: Text(
                     'Forgot Password?',
                     style: TextStyle(
-                      color: const Color(0xFF1976D2),
+                      color: AppColors.primary,
                     ),
                   ),
                 ),
@@ -250,8 +251,8 @@ class LoginScreen extends HookWidget {
               ElevatedButton(
                 onPressed: isLoading ? null : onLogin,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1976D2),
-                  foregroundColor: Colors.white,
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -264,7 +265,7 @@ class LoginScreen extends HookWidget {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
                         ),
                       )
                     : const Text(
@@ -288,7 +289,7 @@ class LoginScreen extends HookWidget {
       children: [
         Text(
           "Don't have an account? ",
-          style: TextStyle(color: Colors.grey[600]),
+          style: TextStyle(color: AppColors.textSecondary),
         ),
         TextButton(
           onPressed: () {
@@ -297,7 +298,7 @@ class LoginScreen extends HookWidget {
           child: Text(
             'Sign Up',
             style: TextStyle(
-              color: const Color(0xFF1976D2),
+              color: AppColors.primary,
               fontWeight: FontWeight.bold,
             ),
           ),

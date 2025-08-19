@@ -8,6 +8,7 @@ import '../pages/profile_page.dart';
 import '../bloc/navigation/navigation_bloc.dart';
 import '../bloc/navigation/navigation_event.dart';
 import '../bloc/navigation/navigation_state.dart';
+import '../styles/app_colors.dart';
 
 class HomeScreen extends HookWidget {
   const HomeScreen({super.key});
@@ -25,7 +26,7 @@ class HomeScreen extends HookWidget {
       child: BlocBuilder<NavigationBloc, NavigationState>(
         builder: (context, state) {
           return Scaffold(
-            backgroundColor: Colors.grey[50],
+            backgroundColor: AppColors.backgroundLight,
             body: IndexedStack(
               index: state.selectedIndex,
               children: screens,
