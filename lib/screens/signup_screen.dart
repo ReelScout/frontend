@@ -66,9 +66,12 @@ class SignUpScreen extends HookWidget {
           pickedImagePath.value = image.path;
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Image pick failed: $e'), backgroundColor: AppColors.error),
-        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Image pick failed: $e'),
+                backgroundColor: AppColors.error),
+          );
+        }
       }
     }
 
