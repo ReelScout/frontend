@@ -368,6 +368,7 @@ class SignUpScreen extends HookWidget {
                                 children: [
                                   for (int i = 0; i < owners.value.length; i++)
                                     _OwnerRow(
+                                      key: ValueKey('owner_$i'),
                                       index: i,
                                       owner: owners.value[i],
                                       onChanged: (o) => updateOwner(
@@ -541,12 +542,13 @@ class _BirthDatePicker extends StatelessWidget {
   }
 }
 
-class _OwnerRow extends StatelessWidget {
+class _OwnerRow extends HookWidget {
   const _OwnerRow({
     required this.index,
     required this.owner,
     required this.onChanged,
     required this.onRemove,
+    super.key,
   });
 
   final int index;
@@ -556,8 +558,20 @@ class _OwnerRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final firstCtrl = TextEditingController(text: owner.firstName);
-    final lastCtrl = TextEditingController(text: owner.lastName);
+    final firstCtrl = useTextEditingController(text: owner.firstName);
+    final lastCtrl = useTextEditingController(text: owner.lastName);
+
+    useEffect(() {
+      if (firstCtrl.text != owner.firstName) {
+        firstCtrl.text = owner.firstName;
+        firstCtrl.selection = TextSelection.collapsed(offset: firstCtrl.text.length);
+      }
+      if (lastCtrl.text != owner.lastName) {
+        lastCtrl.text = owner.lastName;
+        lastCtrl.selection = TextSelection.collapsed(offset: lastCtrl.text.length);
+      }
+      return null;
+    }, [owner.firstName, owner.lastName]);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
