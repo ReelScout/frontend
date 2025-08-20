@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'package:frontend/dto/response/custom_response_dto.dart';
 import '../dto/request/user_password_change_request_dto.dart';
 import '../services/user_service.dart';
 import '../styles/app_colors.dart';
@@ -16,7 +18,7 @@ class _PasswordChangeDialogState extends State<PasswordChangeDialog> {
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   bool _isCurrentPasswordVisible = false;
   bool _isNewPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
@@ -33,9 +35,6 @@ class _PasswordChangeDialogState extends State<PasswordChangeDialog> {
   String? _validateCurrentPassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Current password is required';
-    }
-    if (value.length < 6) {
-      return 'Password must be at least 6 characters';
     }
     return null;
   }
@@ -80,22 +79,23 @@ class _PasswordChangeDialogState extends State<PasswordChangeDialog> {
         confirmPassword: _confirmPasswordController.text,
       );
 
-      await userService.changePassword(requestDto);
+      CustomResponseDto response = await userService.changePassword(requestDto);
 
       if (mounted) {
         Navigator.of(context).pop(true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Password changed successfully'),
+          SnackBar(
+            content: Text(response.message),
             backgroundColor: AppColors.success,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        final String error = e is DioException ? CustomResponseDto.fromJson(e.response?.data).message : 'An unexpected error occurred';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to change password: ${e.toString()}'),
+            content: Text(error),
             backgroundColor: AppColors.error,
           ),
         );
@@ -158,7 +158,7 @@ class _PasswordChangeDialogState extends State<PasswordChangeDialog> {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // New Password Field
               TextFormField(
                 controller: _newPasswordController,
@@ -191,7 +191,7 @@ class _PasswordChangeDialogState extends State<PasswordChangeDialog> {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Confirm Password Field
               TextFormField(
                 controller: _confirmPasswordController,
@@ -224,7 +224,7 @@ class _PasswordChangeDialogState extends State<PasswordChangeDialog> {
                 ),
               ),
               const SizedBox(height: 8),
-              
+
               // Password requirements info
               Text(
                 'Password must be at least 8 characters and contain uppercase, lowercase, and numbers',
@@ -248,7 +248,7 @@ class _PasswordChangeDialogState extends State<PasswordChangeDialog> {
             ),
           ),
         ),
-        
+
         // Change Password Button
         ElevatedButton(
           onPressed: _isLoading ? null : _handlePasswordChange,
