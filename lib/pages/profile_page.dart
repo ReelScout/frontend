@@ -9,6 +9,10 @@ import '../bloc/user_profile/user_profile_event.dart';
 import '../bloc/user_profile/user_profile_state.dart';
 import '../components/profile_avatar.dart';
 import '../components/password_change_helper.dart';
+import '../dto/response/user_response_dto.dart';
+import '../dto/response/member_response_dto.dart';
+import '../dto/response/production_company_response_dto.dart';
+import '../model/location.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -18,10 +22,8 @@ class ProfilePage extends StatelessWidget {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, authState) {
         if (authState is AuthSuccess) {
-          // Load user profile when authentication succeeds
           context.read<UserProfileBloc>().add(LoadUserProfile());
         } else if (authState is AuthLoggedOut) {
-          // Clear user profile when logged out
           context.read<UserProfileBloc>().add(ClearUserProfile());
         }
       },
@@ -30,29 +32,25 @@ class ProfilePage extends StatelessWidget {
           return SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  // Profile header
-                  Text(
-                    'Profile',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Text(
+                      'Profile',
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Show different UI based on authentication state
-                  if (state is AuthSuccess)
-                    _buildAuthenticatedProfile(context)
-                  else
-                    _buildGuestProfile(context),
-
-                  const SizedBox(height: 24),
-
-                  // Features card - show different content based on auth state
-                  if (state is! AuthSuccess) _buildFeaturesCard(context),
-                ],
+                    const SizedBox(height: 32),
+                    if (state is AuthSuccess)
+                      _buildAuthenticatedProfile(context)
+                    else
+                      _buildGuestProfile(context),
+                    const SizedBox(height: 24),
+                    if (state is! AuthSuccess) _buildFeaturesCard(context),
+                  ],
+                ),
               ),
             ),
           );
@@ -114,6 +112,8 @@ class ProfilePage extends StatelessWidget {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  _buildMoreProfileInfo(context, userProfileState.user),
                 ] else if (userProfileState is UserProfileLoading) ...[
                   const CircularProgressIndicator(),
                   const SizedBox(height: 8),
@@ -203,6 +203,82 @@ class ProfilePage extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildMoreProfileInfo(BuildContext context, UserResponseDto user) {
+    final theme = Theme.of(context);
+    final primary = theme.primaryColor;
+
+    List<Widget> children;
+    if (user is MemberResponseDto) {
+      final birth = user.birthDate.toLocal();
+      final birthDateStr = '${birth.year.toString().padLeft(4, '0')}-${birth.month.toString().padLeft(2, '0')}-${birth.day.toString().padLeft(2, '0')}';
+      children = [
+        _infoTile(context, Icons.badge, 'First name', user.firstName),
+        _infoTile(context, Icons.badge_outlined, 'Last name', user.lastName),
+        _infoTile(context, Icons.cake, 'Birth date', birthDateStr),
+      ];
+    } else if (user is ProductionCompanyResponseDto) {
+      final loc = user.location;
+      final locationStr = _formatLocation(loc);
+      final ownersChips = user.owners.isEmpty
+          ? Text('No owners listed', style: theme.textTheme.bodyMedium)
+          : Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                for (final o in user.owners) Chip(label: Text('${o.firstName} ${o.lastName}')),
+              ],
+            );
+      children = [
+        _infoTile(context, Icons.business, 'Company name', user.name),
+        _infoTile(context, Icons.language, 'Website', user.website),
+        _infoTile(context, Icons.location_on, 'Location', locationStr),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: Icon(Icons.people, color: primary),
+          title: Text('Owners', style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600])),
+          subtitle: ownersChips,
+        ),
+      ];
+    } else {
+      children = [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text('No additional information available', style: theme.textTheme.bodyMedium),
+        ),
+      ];
+    }
+
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      childrenPadding: const EdgeInsets.only(top: 8),
+      initiallyExpanded: false,
+      maintainState: true,
+      leading: Icon(Icons.info_outline, color: primary),
+      title: Text('More profile info', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+      children: children,
+    );
+  }
+
+  String _formatLocation(Location l) {
+    final parts = <String>[];
+    if (l.address.trim().isNotEmpty) parts.add(l.address.trim());
+    if (l.city.trim().isNotEmpty) parts.add(l.city.trim());
+    if (l.state.trim().isNotEmpty) parts.add(l.state.trim());
+    if (l.country.trim().isNotEmpty) parts.add(l.country.trim());
+    if (l.postalCode.trim().isNotEmpty) parts.add(l.postalCode.trim());
+    return parts.join(', ');
+  }
+
+  Widget _infoTile(BuildContext context, IconData icon, String label, String value) {
+    final theme = Theme.of(context);
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon, color: theme.primaryColor),
+      title: Text(label, style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600])),
+      subtitle: Text(value, style: theme.textTheme.bodyMedium),
     );
   }
 
