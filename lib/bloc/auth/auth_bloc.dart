@@ -16,6 +16,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<LoginRequested>(_onLoginRequested);
     on<LogoutRequested>(_onLogoutRequested);
     on<AuthCheckRequested>(_onAuthCheckRequested);
+    on<RegisterRequested>(_onRegisterRequested);
   }
 
   final AuthService _authService;
@@ -77,6 +78,39 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthSuccess(token: token));
     } else {
       emit(AuthLoggedOut());
+    }
+  }
+
+  Future<void> _onRegisterRequested(
+      RegisterRequested event,
+      Emitter<AuthState> emit,
+      ) async {
+    emit(AuthLoading());
+
+    try {
+      final response = await _authService.register(event.userRequest);
+
+      // If backend returns a token on sign up, store it
+      if (response.accessToken.isNotEmpty) {
+        await _tokenService.saveToken(response.accessToken);
+      }
+
+      emit(const AuthSuccess(message: 'Registration successful!'));
+    } on DioException catch (e) {
+      String errorMessage = e.error?.toString() ?? 'Registration failed';
+
+      if (e.response?.data != null) {
+        try {
+          final customResponse = CustomResponseDto.fromJson(e.response!.data);
+          errorMessage = customResponse.message;
+        } catch (_) {
+          errorMessage = e.error?.toString() ?? 'Registration failed';
+        }
+      }
+
+      emit(AuthFailure(error: errorMessage));
+    } catch (e) {
+      emit(AuthFailure(error: 'An unexpected error occurred: $e'));
     }
   }
 }

@@ -6,6 +6,7 @@ import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
 import '../bloc/auth/auth_state.dart';
 import '../styles/app_colors.dart';
+import 'signup_screen.dart';
 
 class LoginScreen extends HookWidget {
   const LoginScreen({super.key});
@@ -98,7 +99,7 @@ class LoginScreen extends HookWidget {
                 onLogin: onLogin,
               ),
               const SizedBox(height: 24),
-              _buildFooter(),
+              _buildFooter(context),
             ],
           ),
         ),
@@ -277,7 +278,7 @@ class LoginScreen extends HookWidget {
     );
   }
 
-  Widget _buildFooter() {
+  Widget _buildFooter(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -287,7 +288,9 @@ class LoginScreen extends HookWidget {
         ),
         TextButton(
           onPressed: () {
-            // TODO: Navigate to sign up screen
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SignUpScreen()),
+            );
           },
           child: Text(
             'Sign Up',

@@ -15,5 +15,5 @@ abstract class AuthService {
   Future<UserLoginResponseDto> login(@Body() UserLoginRequestDto request);
 
   @POST('/register')
-  Future<UserLoginRequestDto> register(@Body() UserRequestDto userRequestDto);
+  Future<UserLoginResponseDto> register(@Body() UserRequestDto userRequestDto);
 }
