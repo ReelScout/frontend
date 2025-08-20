@@ -9,15 +9,16 @@ import 'package:image_picker/image_picker.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
 import '../bloc/auth/auth_state.dart';
-
+import '../components/signup/signup_form_components.dart';
+import '../components/signup/account_form_section.dart';
+import '../components/signup/member_form_section.dart';
+import '../components/signup/company_form_sections.dart';
 import '../dto/request/member_request_dto.dart';
 import '../dto/request/production_company_request_dto.dart';
 import '../dto/request/user_request_dto.dart';
 import '../model/location.dart';
 import '../model/owner.dart';
 import '../styles/app_colors.dart';
-
-enum AccountType { member, company }
 
 class SignUpScreen extends HookWidget {
   const SignUpScreen({super.key});
@@ -83,13 +84,9 @@ class SignUpScreen extends HookWidget {
       }
     }
 
-    void updateOwner(int index, {String? firstName, String? lastName}) {
+    void updateOwner(int index, Owner owner) {
       final list = [...owners.value];
-      final current = list[index];
-      list[index] = Owner(
-        firstName: firstName ?? current.firstName,
-        lastName: lastName ?? current.lastName,
-      );
+      list[index] = owner;
       owners.value = list;
     }
 
@@ -170,18 +167,6 @@ class SignUpScreen extends HookWidget {
       context.read<AuthBloc>().add(RegisterRequested(userRequest: request));
     }
 
-    String? validateRequired(String? v, {String label = 'This field'}) {
-      if (v == null || v.trim().isEmpty) return '$label is required';
-      return null;
-    }
-
-    String? validateEmail(String? v) {
-      if (v == null || v.trim().isEmpty) return 'Email is required';
-      final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
-      if (!emailRegex.hasMatch(v.trim())) return 'Enter a valid email';
-      return null;
-    }
-
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthSuccess) {
@@ -219,180 +204,47 @@ class SignUpScreen extends HookWidget {
                   key: formKey,
                   child: Column(
                     children: [
-                      _AccountTypeSelector(accountType: accountType),
+                      AccountTypeSelector(
+                        accountType: accountType.value,
+                        onChanged: (type) => accountType.value = type,
+                      ),
                       const SizedBox(height: 16),
-                      _ImagePickerRow(
+                      ImagePickerRow(
                         pickedPath: pickedImagePath.value,
                         onPick: isLoading ? null : pickImage,
                       ),
                       const SizedBox(height: 16),
-                      _SectionCard(
-                        title: 'Account',
-                        child: Column(
-                          children: [
-                            TextFormField(
-                              controller: usernameCtrl,
-                              decoration: _inputDecoration('Username', Icons.person),
-                              validator: (v) => validateRequired(v, label: 'Username'),
-                              textInputAction: TextInputAction.next,
-                            ),
-                            const SizedBox(height: 12),
-                            TextFormField(
-                              controller: emailCtrl,
-                              decoration: _inputDecoration('Email', Icons.email),
-                              validator: validateEmail,
-                              keyboardType: TextInputType.emailAddress,
-                              textInputAction: TextInputAction.next,
-                            ),
-                            const SizedBox(height: 12),
-                            HookBuilder(builder: (context) {
-                              return TextFormField(
-                                controller: passwordCtrl,
-                                decoration: _inputDecoration('Password', Icons.lock).copyWith(
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      obscurePassword.value
-                                          ? Icons.visibility
-                                          : Icons.visibility_off,
-                                    ),
-                                    onPressed: isLoading
-                                        ? null
-                                        : () => obscurePassword.value = !obscurePassword.value,
-                                  ),
-                                ),
-                                obscureText: obscurePassword.value,
-                                validator: (v) => validateRequired(v, label: 'Password'),
-                                textInputAction: TextInputAction.done,
-                              );
-                            }),
-                          ],
-                        ),
+                      AccountFormSection(
+                        usernameController: usernameCtrl,
+                        emailController: emailCtrl,
+                        passwordController: passwordCtrl,
+                        obscurePassword: obscurePassword.value,
+                        onObscureToggle: () => obscurePassword.value = !obscurePassword.value,
+                        isEnabled: !isLoading,
                       ),
                       const SizedBox(height: 16),
                       if (accountType.value == AccountType.member)
-                        _SectionCard(
-                          title: 'Personal info',
-                          child: Column(
-                            children: [
-                              TextFormField(
-                                controller: firstNameCtrl,
-                                decoration: _inputDecoration('First name', Icons.badge),
-                                validator: (v) => validateRequired(v, label: 'First name'),
-                                textInputAction: TextInputAction.next,
-                              ),
-                              const SizedBox(height: 12),
-                              TextFormField(
-                                controller: lastNameCtrl,
-                                decoration: _inputDecoration('Last name', Icons.badge_outlined),
-                                validator: (v) => validateRequired(v, label: 'Last name'),
-                                textInputAction: TextInputAction.next,
-                              ),
-                              const SizedBox(height: 12),
-                              _BirthDatePicker(
-                                birthDate: birthDate.value,
-                                onPick: isLoading ? null : chooseBirthDate,
-                              ),
-                            ],
-                          ),
+                        MemberFormSection(
+                          firstNameController: firstNameCtrl,
+                          lastNameController: lastNameCtrl,
+                          birthDate: birthDate.value,
+                          onBirthDatePick: chooseBirthDate,
+                          isEnabled: !isLoading,
                         ),
                       if (accountType.value == AccountType.company)
-                        Column(
-                          children: [
-                            _SectionCard(
-                              title: 'Company',
-                              child: Column(
-                                children: [
-                                  TextFormField(
-                                    controller: companyNameCtrl,
-                                    decoration: _inputDecoration('Company name', Icons.apartment),
-                                    validator: (v) => validateRequired(v, label: 'Company name'),
-                                    textInputAction: TextInputAction.next,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  TextFormField(
-                                    controller: websiteCtrl,
-                                    decoration: _inputDecoration('Website', Icons.language),
-                                    validator: (v) => validateRequired(v, label: 'Website'),
-                                    keyboardType: TextInputType.url,
-                                    textInputAction: TextInputAction.next,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            _SectionCard(
-                              title: 'Location',
-                              child: Column(
-                                children: [
-                                  TextFormField(
-                                    controller: addressCtrl,
-                                    decoration: _inputDecoration('Address', Icons.place),
-                                    validator: (v) => validateRequired(v, label: 'Address'),
-                                    textInputAction: TextInputAction.next,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  TextFormField(
-                                    controller: cityCtrl,
-                                    decoration: _inputDecoration('City', Icons.location_city),
-                                    validator: (v) => validateRequired(v, label: 'City'),
-                                    textInputAction: TextInputAction.next,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  TextFormField(
-                                    controller: stateCtrl,
-                                    decoration: _inputDecoration('State/Region', Icons.map),
-                                    validator: (v) => validateRequired(v, label: 'State'),
-                                    textInputAction: TextInputAction.next,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  TextFormField(
-                                    controller: countryCtrl,
-                                    decoration: _inputDecoration('Country', Icons.flag),
-                                    validator: (v) => validateRequired(v, label: 'Country'),
-                                    textInputAction: TextInputAction.next,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  TextFormField(
-                                    controller: postalCtrl,
-                                    decoration: _inputDecoration('Postal code', Icons.local_post_office),
-                                    validator: (v) => validateRequired(v, label: 'Postal code'),
-                                    textInputAction: TextInputAction.done,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            _SectionCard(
-                              title: 'Owners',
-                              child: Column(
-                                children: [
-                                  for (int i = 0; i < owners.value.length; i++)
-                                    _OwnerRow(
-                                      key: ValueKey('owner_$i'),
-                                      index: i,
-                                      owner: owners.value[i],
-                                      onChanged: (o) => updateOwner(
-                                        i,
-                                        firstName: o.firstName,
-                                        lastName: o.lastName,
-                                      ),
-                                      onRemove: owners.value.length > 1
-                                          ? () => removeOwner(i)
-                                          : null,
-                                    ),
-                                  const SizedBox(height: 8),
-                                  Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: OutlinedButton.icon(
-                                      onPressed: isLoading ? null : addOwner,
-                                      icon: const Icon(Icons.add),
-                                      label: const Text('Add owner'),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                        CompanyFormSections(
+                          companyNameController: companyNameCtrl,
+                          websiteController: websiteCtrl,
+                          addressController: addressCtrl,
+                          cityController: cityCtrl,
+                          stateController: stateCtrl,
+                          countryController: countryCtrl,
+                          postalController: postalCtrl,
+                          owners: owners.value,
+                          onAddOwner: addOwner,
+                          onRemoveOwner: removeOwner,
+                          onUpdateOwner: updateOwner,
+                          isEnabled: !isLoading,
                         ),
                       const SizedBox(height: 24),
                       SizedBox(
@@ -440,182 +292,3 @@ class SignUpScreen extends HookWidget {
   }
 }
 
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.title, required this.child});
-  final String title;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 4,
-      shadowColor: AppColors.shadow,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            child,
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AccountTypeSelector extends StatelessWidget {
-  const _AccountTypeSelector({required this.accountType});
-  final ValueNotifier<AccountType> accountType;
-
-  @override
-  Widget build(BuildContext context) {
-    return SegmentedButton<AccountType>(
-      segments: const [
-        ButtonSegment(value: AccountType.member, icon: Icon(Icons.person), label: Text('Member')),
-        ButtonSegment(value: AccountType.company, icon: Icon(Icons.business), label: Text('Company')),
-      ],
-      selected: {accountType.value},
-      onSelectionChanged: (s) => accountType.value = s.first,
-    );
-  }
-}
-
-class _ImagePickerRow extends StatelessWidget {
-  const _ImagePickerRow({required this.pickedPath, required this.onPick});
-  final String? pickedPath;
-  final VoidCallback? onPick;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        CircleAvatar(
-          radius: 28,
-          backgroundColor: AppColors.inputBackground,
-          backgroundImage: pickedPath != null ? FileImage(File(pickedPath!)) : null,
-          child: pickedPath == null ? const Icon(Icons.person, color: Colors.grey) : null,
-        ),
-        const SizedBox(width: 12),
-        OutlinedButton.icon(
-          onPressed: onPick,
-          icon: const Icon(Icons.image),
-          label: const Text('Upload profile image'),
-        ),
-      ],
-    );
-  }
-}
-
-class _BirthDatePicker extends StatelessWidget {
-  const _BirthDatePicker({required this.birthDate, required this.onPick});
-  final DateTime? birthDate;
-  final VoidCallback? onPick;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = birthDate == null
-        ? 'Select birth date'
-        : '${birthDate!.year}-${birthDate!.month.toString().padLeft(2, '0')}-${birthDate!.day.toString().padLeft(2, '0')}';
-
-    return InkWell(
-      onTap: onPick,
-      child: InputDecorator(
-        decoration: _inputDecoration('Birth date', Icons.cake),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(text),
-            const Icon(Icons.calendar_today),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _OwnerRow extends HookWidget {
-  const _OwnerRow({
-    required this.index,
-    required this.owner,
-    required this.onChanged,
-    required this.onRemove,
-    super.key,
-  });
-
-  final int index;
-  final Owner owner;
-  final ValueChanged<Owner> onChanged;
-  final VoidCallback? onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    final firstCtrl = useTextEditingController(text: owner.firstName);
-    final lastCtrl = useTextEditingController(text: owner.lastName);
-
-    useEffect(() {
-      if (firstCtrl.text != owner.firstName) {
-        firstCtrl.text = owner.firstName;
-        firstCtrl.selection = TextSelection.collapsed(offset: firstCtrl.text.length);
-      }
-      if (lastCtrl.text != owner.lastName) {
-        lastCtrl.text = owner.lastName;
-        lastCtrl.selection = TextSelection.collapsed(offset: lastCtrl.text.length);
-      }
-      return null;
-    }, [owner.firstName, owner.lastName]);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: firstCtrl,
-              decoration: const InputDecoration(
-                labelText: 'First name',
-                prefixIcon: Icon(Icons.badge),
-              ),
-              onChanged: (v) => onChanged(Owner(firstName: v, lastName: lastCtrl.text)),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: TextField(
-              controller: lastCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Last name',
-                prefixIcon: Icon(Icons.badge_outlined),
-              ),
-              onChanged: (v) => onChanged(Owner(firstName: firstCtrl.text, lastName: v)),
-            ),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            onPressed: onRemove,
-            icon: const Icon(Icons.remove_circle_outline),
-            color: onRemove == null ? Colors.grey : AppColors.error,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-InputDecoration _inputDecoration(String label, IconData icon) {
-  return InputDecoration(
-    labelText: label,
-    prefixIcon: Icon(icon),
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-    filled: true,
-    fillColor: AppColors.inputBackground,
-  );
-}
