@@ -75,7 +75,7 @@ class _UserService implements UserService {
   }
 
   @override
-  Future<UserLoginResponseDto> update(UserRequestDto userRequestDto) async {
+  Future<UserLoginResponseDto?> update(UserRequestDto userRequestDto) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -91,10 +91,12 @@ class _UserService implements UserService {
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late UserLoginResponseDto _value;
+    final _result = await _dio.fetch<Map<String, dynamic>?>(_options);
+    late UserLoginResponseDto? _value;
     try {
-      _value = UserLoginResponseDto.fromJson(_result.data!);
+      _value = _result.data == null
+          ? null
+          : UserLoginResponseDto.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;

@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import '../../model/owner.dart';
@@ -130,7 +130,7 @@ class ImagePickerRow extends StatelessWidget {
         CircleAvatar(
           radius: 28,
           backgroundColor: AppColors.inputBackground,
-          backgroundImage: pickedPath != null ? FileImage(File(pickedPath!)) : null,
+          backgroundImage: pickedPath != null ? MemoryImage(base64Decode(pickedPath!))  : null,
           child: pickedPath == null ? const Icon(Icons.person, color: Colors.grey) : null,
         ),
         const SizedBox(width: 12),

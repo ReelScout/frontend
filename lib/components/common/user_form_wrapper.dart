@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -103,9 +102,9 @@ class UserFormWrapper extends HookWidget {
           imageQuality: 75,
         );
         if (image != null) {
-          final bytes = await File(image.path).readAsBytes();
+          final bytes = await image.readAsBytes();
           base64Image.value = base64Encode(bytes);
-          pickedImagePath.value = image.path;
+          pickedImagePath.value = base64Image.value;
         }
       } catch (e) {
         if (context.mounted) {

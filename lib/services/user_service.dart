@@ -20,5 +20,5 @@ abstract class UserService {
   Future<CustomResponseDto> changePassword(@Body() UserPasswordChangeRequestDto userPasswordChangeRequestDto);
 
   @PUT('/update')
-  Future<UserLoginResponseDto> update(@Body() UserRequestDto userRequestDto);
+  Future<UserLoginResponseDto?> update(@Body() UserRequestDto userRequestDto);
 }
