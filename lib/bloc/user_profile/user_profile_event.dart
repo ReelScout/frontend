@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../dto/request/user_request_dto.dart';
 
 abstract class UserProfileEvent extends Equatable {
   const UserProfileEvent();
@@ -10,3 +11,12 @@ abstract class UserProfileEvent extends Equatable {
 class LoadUserProfile extends UserProfileEvent {}
 
 class ClearUserProfile extends UserProfileEvent {}
+
+class UpdateUserProfile extends UserProfileEvent {
+  const UpdateUserProfile({required this.userRequest});
+
+  final UserRequestDto userRequest;
+
+  @override
+  List<Object?> get props => [userRequest];
+}

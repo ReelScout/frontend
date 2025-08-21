@@ -29,3 +29,14 @@ class UserProfileError extends UserProfileState {
   @override
   List<Object?> get props => [message];
 }
+
+class UserProfileUpdating extends UserProfileState {}
+
+class UserProfileUpdateSuccess extends UserProfileState {
+  const UserProfileUpdateSuccess({this.message});
+
+  final String? message;
+
+  @override
+  List<Object?> get props => [message];
+}

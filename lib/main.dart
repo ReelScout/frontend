@@ -32,6 +32,7 @@ class ReelScoutApp extends StatelessWidget {
         BlocProvider<UserProfileBloc>(
           create: (context) => UserProfileBloc(
             userService: getIt<UserService>(),
+            tokenService: getIt<TokenService>(),
           ),
         ),
         BlocProvider<NavigationBloc>(
