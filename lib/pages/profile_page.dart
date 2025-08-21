@@ -9,6 +9,7 @@ import '../bloc/user_profile/user_profile_event.dart';
 import '../bloc/user_profile/user_profile_state.dart';
 import '../components/profile_avatar.dart';
 import '../components/password_change_helper.dart';
+import '../screens/profile_update_screen.dart';
 import '../dto/response/user_response_dto.dart';
 import '../dto/response/member_response_dto.dart';
 import '../dto/response/production_company_response_dto.dart';
@@ -156,6 +157,35 @@ class ProfilePage extends StatelessWidget {
                 ],
                 
                 const SizedBox(height: 24),
+
+                // Edit Profile Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ProfileUpdateScreen(),
+                        ),
+                      );
+                      // If profile was updated, refresh
+                      if (result == true && context.mounted) {
+                        context.read<UserProfileBloc>().add(LoadUserProfile());
+                      }
+                    },
+                    icon: const Icon(Icons.edit),
+                    label: const Text('Edit Profile'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
                 
                 // Change Password Button
                 SizedBox(

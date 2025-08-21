@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:frontend/dto/response/custom_response_dto.dart';
+import 'package:frontend/dto/response/user_login_response_dto.dart';
 import 'package:retrofit/retrofit.dart';
 
 import '../dto/request/user_request_dto.dart';
@@ -18,6 +19,6 @@ abstract class UserService {
   @PATCH('/change-password')
   Future<CustomResponseDto> changePassword(@Body() UserPasswordChangeRequestDto userPasswordChangeRequestDto);
 
-  @POST('/update')
-  Future<UserResponseDto> update(@Body() UserRequestDto userRequestDto);
+  @PUT('/update')
+  Future<UserLoginResponseDto> update(@Body() UserRequestDto userRequestDto);
 }
