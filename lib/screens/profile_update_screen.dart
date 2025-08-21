@@ -45,7 +45,7 @@ class ProfileUpdateScreen extends HookWidget {
                 final response = await userService.update(request);
 
                 // If username changed and backend returned new token, update stored token
-                if (isUsernameChanged && response.accessToken.isNotEmpty) {
+                if (isUsernameChanged && response!.accessToken.isNotEmpty) {
                   await tokenService.saveToken(response.accessToken);
                 }
 
