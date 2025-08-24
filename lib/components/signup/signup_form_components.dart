@@ -226,7 +226,7 @@ class OwnerRow extends HookWidget {
         firstNameCtrl.removeListener(listener);
         lastNameCtrl.removeListener(listener);
       };
-    }, []);
+    }, [onChanged]);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),

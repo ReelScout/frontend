@@ -86,7 +86,7 @@ class UserFormWrapper extends HookWidget {
     );
     final owners = useState<List<Owner>>(
       existingUser is ProductionCompanyResponseDto 
-        ? List<Owner>.from((existingUser as ProductionCompanyResponseDto).owners) 
+        ? List<Owner>.from((existingUser as ProductionCompanyResponseDto).owners)
         : [Owner(firstName: '', lastName: '')],
     );
 
@@ -129,8 +129,13 @@ class UserFormWrapper extends HookWidget {
 
     void updateOwner(int index, Owner owner) {
       final list = [...owners.value];
-      list[index] = owner;
-      owners.value = list;
+      if (index >= 0 && index < list.length) {
+        list[index] = list[index].copyWith(
+          firstName: owner.firstName,
+          lastName: owner.lastName,
+        );
+        owners.value = list;
+      }
     }
 
     Future<void> chooseBirthDate() async {

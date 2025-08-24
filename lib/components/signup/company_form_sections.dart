@@ -119,7 +119,7 @@ class CompanyFormSections extends HookWidget {
             children: [
               for (int i = 0; i < owners.length; i++)
                 OwnerRow(
-                  key: ValueKey('owner_$i'),
+                  key: ValueKey(owners[i].id),
                   index: i,
                   owner: owners[i],
                   onChanged: (owner) => onUpdateOwner(i, owner),
