@@ -125,21 +125,66 @@ class ImagePickerRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        CircleAvatar(
-          radius: 28,
-          backgroundColor: AppColors.inputBackground,
-          backgroundImage: pickedPath != null ? MemoryImage(base64Decode(pickedPath!))  : null,
-          child: pickedPath == null ? const Icon(Icons.person, color: Colors.grey) : null,
-        ),
-        const SizedBox(width: 12),
-        OutlinedButton.icon(
-          onPressed: onPick,
-          icon: const Icon(Icons.image),
-          label: const Text('Upload profile image'),
-        ),
-      ],
+    return Center(
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: onPick,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 50,
+                  backgroundColor: AppColors.inputBackground,
+                  backgroundImage: pickedPath != null ? MemoryImage(base64Decode(pickedPath!)) : null,
+                  child: pickedPath == null ? const Icon(Icons.person, size: 50, color: Colors.grey) : null,
+                ),
+                // Overlay with camera icon when no image is selected
+                if (pickedPath == null)
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black.withValues(alpha: 0.3),
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt,
+                      size: 30,
+                      color: Colors.white,
+                    ),
+                  ),
+                // Small edit icon in bottom-right corner when image is selected
+                if (pickedPath != null)
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.edit,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            pickedPath == null ? 'Tap to add profile photo' : 'Tap to change photo',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

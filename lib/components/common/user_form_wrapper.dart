@@ -49,7 +49,7 @@ class UserFormWrapper extends HookWidget {
     final passwordCtrl = useTextEditingController();
     final obscurePassword = useState(true);
     final base64Image = useState<String?>(existingUser?.base64Image);
-    final pickedImagePath = useState<String?>(null);
+    final pickedImagePath = useState<String?>(existingUser?.base64Image);
 
     // Member fields
     final firstNameCtrl = useTextEditingController(
@@ -229,13 +229,6 @@ class UserFormWrapper extends HookWidget {
             key: formKey,
             child: Column(
               children: [
-                if (showAccountTypeSelector) ...[
-                  AccountTypeSelector(
-                    accountType: accountType.value,
-                    onChanged: (type) => accountType.value = type,
-                  ),
-                  const SizedBox(height: 16),
-                ],
                 ImagePickerRow(
                   pickedPath: pickedImagePath.value,
                   onPick: isLoading ? null : pickImage,
@@ -249,7 +242,14 @@ class UserFormWrapper extends HookWidget {
                   onObscureToggle: () => obscurePassword.value = !obscurePassword.value,
                   isEnabled: !isLoading,
                 ),
-                const SizedBox(height: 16),
+                if (showAccountTypeSelector) ...[
+                  const SizedBox(height: 16),
+                  AccountTypeSelector(
+                    accountType: accountType.value,
+                    onChanged: (type) => accountType.value = type,
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 if (!isCompanyAccount)
                   MemberFormSection(
                     firstNameController: firstNameCtrl,
