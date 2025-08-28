@@ -1,0 +1,35 @@
+import 'package:json_annotation/json_annotation.dart';
+
+import '../../model/actor.dart';
+import '../../model/director.dart';
+
+part '../generated/response/content_response_dto.g.dart';
+
+@JsonSerializable()
+class ContentResponseDto {
+  ContentResponseDto({
+    required this.title,
+    required this.description,
+    required this.contentType,
+    required this.actors,
+    required this.directors,
+    this.base64Image,
+    this.trailerUrl,
+    required this.productionCompanyId,
+    required this.productionCompanyName,
+  });
+
+  final String title;
+  final String description;
+  final String contentType;
+  final List<Actor> actors;
+  final List<Director> directors;
+  final String? base64Image;
+  final String? trailerUrl;
+  final int productionCompanyId;
+  final String productionCompanyName;
+
+  factory ContentResponseDto.fromJson(Map<String, dynamic> json) => _$ContentResponseDtoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ContentResponseDtoToJson(this);
+}
