@@ -8,6 +8,7 @@ part of '../../response/content_response_dto.dart';
 
 ContentResponseDto _$ContentResponseDtoFromJson(Map<String, dynamic> json) =>
     ContentResponseDto(
+      id: (json['id'] as num).toInt(),
       title: json['title'] as String,
       description: json['description'] as String,
       contentType: json['contentType'] as String,
@@ -25,6 +26,7 @@ ContentResponseDto _$ContentResponseDtoFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$ContentResponseDtoToJson(ContentResponseDto instance) =>
     <String, dynamic>{
+      'id': instance.id,
       'title': instance.title,
       'description': instance.description,
       'contentType': instance.contentType,

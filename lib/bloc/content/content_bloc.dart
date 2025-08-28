@@ -9,6 +9,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
   }) : _contentService = contentService,
        super(ContentInitial()) {
     on<AddContentRequested>(_onAddContentRequested);
+    on<UpdateContentRequested>(_onUpdateContentRequested);
     on<LoadContentRequested>(_onLoadContentRequested);
     on<LoadContentTypesRequested>(_onLoadContentTypesRequested);
     on<LoadMyContentsRequested>(_onLoadMyContentsRequested);
@@ -31,6 +32,25 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
       ));
     } catch (error) {
       emit(ContentAddError(
+        message: error.toString(),
+      ));
+    }
+  }
+
+  Future<void> _onUpdateContentRequested(
+    UpdateContentRequested event,
+    Emitter<ContentState> emit,
+  ) async {
+    emit(ContentUpdating());
+    
+    try {
+      final content = await _contentService.updateContent(event.contentId, event.contentRequest);
+      emit(ContentUpdateSuccess(
+        content: content,
+        message: 'Content updated successfully!',
+      ));
+    } catch (error) {
+      emit(ContentUpdateError(
         message: error.toString(),
       ));
     }

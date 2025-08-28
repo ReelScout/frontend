@@ -8,6 +8,7 @@ part '../generated/response/content_response_dto.g.dart';
 @JsonSerializable()
 class ContentResponseDto {
   ContentResponseDto({
+    required this.id,
     required this.title,
     required this.description,
     required this.contentType,
@@ -19,6 +20,7 @@ class ContentResponseDto {
     required this.productionCompanyName,
   });
 
+  final int id;
   final String title;
   final String description;
   final String contentType;

@@ -54,6 +54,30 @@ class ContentAddError extends ContentState {
   List<Object?> get props => [message];
 }
 
+class ContentUpdating extends ContentState {}
+
+class ContentUpdateSuccess extends ContentState {
+  const ContentUpdateSuccess({
+    required this.content,
+    this.message,
+  });
+
+  final ContentResponseDto content;
+  final String? message;
+
+  @override
+  List<Object?> get props => [content, message];
+}
+
+class ContentUpdateError extends ContentState {
+  const ContentUpdateError({required this.message});
+
+  final String message;
+
+  @override
+  List<Object?> get props => [message];
+}
+
 class ContentTypesLoading extends ContentState {}
 
 class ContentTypesLoaded extends ContentState {

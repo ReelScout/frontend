@@ -17,6 +17,19 @@ class AddContentRequested extends ContentEvent {
   List<Object?> get props => [contentRequest];
 }
 
+class UpdateContentRequested extends ContentEvent {
+  const UpdateContentRequested({
+    required this.contentId,
+    required this.contentRequest,
+  });
+
+  final int contentId;
+  final ContentRequestDto contentRequest;
+
+  @override
+  List<Object?> get props => [contentId, contentRequest];
+}
+
 class LoadContentRequested extends ContentEvent {
   const LoadContentRequested();
 }

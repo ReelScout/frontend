@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import '../screens/add_content_screen.dart';
+import '../screens/update_content_screen.dart';
 import '../bloc/content/content_bloc.dart';
 import '../bloc/content/content_event.dart';
 import '../bloc/content/content_state.dart';
@@ -275,11 +276,18 @@ class ManageContentsPage extends HookWidget {
     }
   }
 
-  void _handleEditContent(BuildContext context, ContentResponseDto content) {
-    // TODO: Navigate to edit screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Edit ${content.title} - Feature coming soon')),
+  void _handleEditContent(BuildContext context, ContentResponseDto content) async {
+    final contentBloc = context.read<ContentBloc>();
+    
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UpdateContentScreen(content: content),
+      ),
     );
+
+    // Refresh the content list when returning from edit screen
+    contentBloc.add(const LoadMyContentsRequested());
   }
 
   void _handleDeleteContent(BuildContext context, ContentResponseDto content) {

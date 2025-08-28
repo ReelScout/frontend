@@ -9,6 +9,7 @@ import '../../bloc/content/content_bloc.dart';
 import '../../bloc/content/content_event.dart';
 import '../../bloc/content/content_state.dart';
 import '../../dto/request/content_request_dto.dart';
+import '../../dto/response/content_response_dto.dart';
 import '../../model/actor.dart';
 import '../../model/director.dart';
 import '../../styles/app_colors.dart';
@@ -20,12 +21,14 @@ class ContentFormWrapper extends HookWidget {
     required this.submitButtonText,
     required this.onSubmit,
     this.isLoading = false,
+    this.initialContent,
   });
 
   final String title;
   final String submitButtonText;
   final Function(ContentRequestDto request) onSubmit;
   final bool isLoading;
+  final ContentResponseDto? initialContent;
 
   @override
   Widget build(BuildContext context) {
@@ -161,13 +164,29 @@ class ContentFormWrapper extends HookWidget {
       onSubmit(request);
     }
 
-    // Initialize with at least one actor and director
+    // Initialize form with initial content or empty values
     useEffect(() {
-      if (actors.value.isEmpty) {
-        actors.value = [Actor(firstName: '', lastName: '')];
-      }
-      if (directors.value.isEmpty) {
-        directors.value = [Director(firstName: '', lastName: '')];
+      if (initialContent != null) {
+        // Pre-fill form with existing content data
+        titleCtrl.text = initialContent!.title;
+        descriptionCtrl.text = initialContent!.description;
+        trailerUrlCtrl.text = initialContent!.trailerUrl ?? '';
+        contentType.value = initialContent!.contentType;
+        actors.value = initialContent!.actors.isNotEmpty 
+            ? initialContent!.actors 
+            : [Actor(firstName: '', lastName: '')];
+        directors.value = initialContent!.directors.isNotEmpty 
+            ? initialContent!.directors 
+            : [Director(firstName: '', lastName: '')];
+        base64Image.value = initialContent!.base64Image;
+      } else {
+        // Initialize with at least one actor and director for new content
+        if (actors.value.isEmpty) {
+          actors.value = [Actor(firstName: '', lastName: '')];
+        }
+        if (directors.value.isEmpty) {
+          directors.value = [Director(firstName: '', lastName: '')];
+        }
       }
       // Load content types from ContentService
       context.read<ContentBloc>().add(const LoadContentTypesRequested());
@@ -185,8 +204,6 @@ class ContentFormWrapper extends HookWidget {
               backgroundColor: AppColors.error,
             ),
           );
-          // Fallback to hardcoded types if service fails
-          contentTypes.value = ['Movie', 'TV Show', 'Documentary', 'Short Film'];
         }
       },
       child: SingleChildScrollView(
@@ -243,7 +260,9 @@ class ContentFormWrapper extends HookWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     DropdownButtonFormField<String>(
-                      initialValue: showCustomInput.value ? null : contentType.value,
+                      initialValue: showCustomInput.value ? null : (
+                        contentTypes.value.contains(contentType.value) ? contentType.value : null
+                      ),
                       decoration: const InputDecoration(
                         labelText: 'Content Type *',
                         border: OutlineInputBorder(),

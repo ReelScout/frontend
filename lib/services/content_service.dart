@@ -13,8 +13,6 @@ abstract class ContentService {
   @POST('/add')
   Future<ContentResponseDto> addContent(@Body() ContentRequestDto contentRequestDto);
 
-  // TODO: Update
-
   @GET('/all')
   Future<List<ContentResponseDto>> getAllContent();
 
@@ -23,4 +21,7 @@ abstract class ContentService {
 
   @GET('/my-contents')
   Future<List<ContentResponseDto>> getMyContents();
+
+  @PUT('/update/{id}')
+  Future<ContentResponseDto> updateContent(@Path('id') int id, @Body() ContentRequestDto contentRequestDto);
 }
