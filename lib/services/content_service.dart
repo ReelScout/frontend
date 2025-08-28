@@ -10,7 +10,7 @@ part 'generated/content_service.g.dart';
 abstract class ContentService {
   factory ContentService(Dio dio, {String? baseUrl, ParseErrorLogger? errorLogger}) = _ContentService;
 
-  @POST('/content/add')
+  @POST('/add')
   Future<ContentResponseDto> addContent(@Body() ContentRequestDto contentRequestDto);
 
   // TODO: Update

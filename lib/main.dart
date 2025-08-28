@@ -6,9 +6,11 @@ import 'bloc/auth/auth_bloc.dart';
 import 'bloc/auth/auth_event.dart';
 import 'bloc/navigation/navigation_bloc.dart';
 import 'bloc/user_profile/user_profile_bloc.dart';
+import 'bloc/content/content_bloc.dart';
 import 'services/auth_service.dart';
 import 'services/token_service.dart';
 import 'services/user_service.dart';
+import 'services/content_service.dart';
 import 'styles/app_theme.dart';
 
 void main() {
@@ -37,6 +39,11 @@ class ReelScoutApp extends StatelessWidget {
         ),
         BlocProvider<NavigationBloc>(
           create: (context) => NavigationBloc(),
+        ),
+        BlocProvider<ContentBloc>(
+          create: (context) => ContentBloc(
+            contentService: getIt<ContentService>(),
+          ),
         ),
       ],
       child: MaterialApp(

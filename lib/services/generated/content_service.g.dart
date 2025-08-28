@@ -30,7 +30,7 @@ class _ContentService implements ContentService {
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/content/add',
+            '/add',
             queryParameters: queryParameters,
             data: _data,
           )

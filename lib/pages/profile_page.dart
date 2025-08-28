@@ -10,6 +10,7 @@ import '../bloc/user_profile/user_profile_state.dart';
 import '../components/profile_avatar.dart';
 import '../components/password_change_helper.dart';
 import '../screens/profile_update_screen.dart';
+import '../pages/manage_contents_page.dart';
 import '../dto/response/user_response_dto.dart';
 import '../dto/response/member_response_dto.dart';
 import '../dto/response/production_company_response_dto.dart';
@@ -208,6 +209,35 @@ class ProfilePage extends StatelessWidget {
                 ),
                 
                 const SizedBox(height: 12),
+                
+                // Manage Contents Button (only for production companies)
+                if (userProfileState is UserProfileLoaded && userProfileState.user is ProductionCompanyResponseDto) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        // Navigate to manage contents page
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ManageContentsPage(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.movie_creation),
+                      label: const Text('Manage Contents'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.8),
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 
                 // Sign Out Button
                 SizedBox(

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:frontend/services/auth_service.dart';
+import 'package:frontend/services/content_service.dart';
 import 'package:frontend/services/user_service.dart';
 import 'package:injectable/injectable.dart';
 
@@ -10,4 +11,7 @@ abstract class ServiceModule {
   
   @singleton
   UserService userService(Dio dio) => UserService(dio, baseUrl: "${dio.options.baseUrl}/user");
+  
+  @singleton
+  ContentService contentService(Dio dio) => ContentService(dio, baseUrl: "${dio.options.baseUrl}/content");
 }
