@@ -28,3 +28,7 @@ class ClearContent extends ContentEvent {
 class LoadContentTypesRequested extends ContentEvent {
   const LoadContentTypesRequested();
 }
+
+class LoadMyContentsRequested extends ContentEvent {
+  const LoadMyContentsRequested();
+}

@@ -11,6 +11,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     on<AddContentRequested>(_onAddContentRequested);
     on<LoadContentRequested>(_onLoadContentRequested);
     on<LoadContentTypesRequested>(_onLoadContentTypesRequested);
+    on<LoadMyContentsRequested>(_onLoadMyContentsRequested);
     on<ClearContent>(_onClearContent);
   }
 
@@ -62,6 +63,22 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
       emit(ContentTypesLoaded(contentTypes: contentTypes));
     } catch (error) {
       emit(ContentTypesError(
+        message: error.toString(),
+      ));
+    }
+  }
+
+  Future<void> _onLoadMyContentsRequested(
+    LoadMyContentsRequested event,
+    Emitter<ContentState> emit,
+  ) async {
+    emit(ContentLoading());
+    
+    try {
+      final contents = await _contentService.getMyContents();
+      emit(ContentLoaded(contents: contents));
+    } catch (error) {
+      emit(ContentError(
         message: error.toString(),
       ));
     }

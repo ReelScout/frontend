@@ -20,4 +20,7 @@ abstract class ContentService {
 
   @GET('/content-types')
   Future<List<String>> getContentTypes();
+
+  @GET('/my-contents')
+  Future<List<ContentResponseDto>> getMyContents();
 }
