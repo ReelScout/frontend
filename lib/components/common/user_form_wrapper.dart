@@ -130,10 +130,8 @@ class UserFormWrapper extends HookWidget {
     void updateOwner(int index, Owner owner) {
       final list = [...owners.value];
       if (index >= 0 && index < list.length) {
-        list[index] = list[index].copyWith(
-          firstName: owner.firstName,
-          lastName: owner.lastName,
-        );
+        owner.id = list[index].id; // Preserve the original generated ID for UI consistency
+        list[index] = owner;
         owners.value = list;
       }
     }
