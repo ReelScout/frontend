@@ -294,30 +294,57 @@ class ManageContentsPage extends HookWidget {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Delete Content'),
-          content: Text('Are you sure you want to delete "${content.title}"?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                // TODO: Implement delete functionality
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Delete ${content.title} - Feature coming soon')),
-                );
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red,
-              ),
-              child: const Text('Delete'),
-            ),
-          ],
+        return BlocConsumer<ContentBloc, ContentState>(
+          listener: (context, state) {
+            if (state is ContentDeleteSuccess) {
+              Navigator.of(dialogContext).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message ?? 'Content deleted successfully!'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              // Refresh the content list
+              context.read<ContentBloc>().add(const LoadMyContentsRequested());
+            } else if (state is ContentDeleteError) {
+              Navigator.of(dialogContext).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Error: ${state.message}'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
+          builder: (context, state) {
+            return AlertDialog(
+              title: const Text('Delete Content'),
+              content: Text('Are you sure you want to delete "${content.title}"?'),
+              actions: [
+                TextButton(
+                  onPressed: state is ContentDeleting ? null : () {
+                    Navigator.of(dialogContext).pop();
+                  },
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: state is ContentDeleting ? null : () {
+                    context.read<ContentBloc>().add(DeleteContentRequested(contentId: content.id));
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.red,
+                  ),
+                  child: state is ContentDeleting 
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Delete'),
+                ),
+              ],
+            );
+          },
         );
       },
     );

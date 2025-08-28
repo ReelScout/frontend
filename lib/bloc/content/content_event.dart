@@ -45,3 +45,12 @@ class LoadContentTypesRequested extends ContentEvent {
 class LoadMyContentsRequested extends ContentEvent {
   const LoadMyContentsRequested();
 }
+
+class DeleteContentRequested extends ContentEvent {
+  const DeleteContentRequested({required this.contentId});
+
+  final int contentId;
+
+  @override
+  List<Object?> get props => [contentId];
+}

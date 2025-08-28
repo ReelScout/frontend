@@ -10,6 +10,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
        super(ContentInitial()) {
     on<AddContentRequested>(_onAddContentRequested);
     on<UpdateContentRequested>(_onUpdateContentRequested);
+    on<DeleteContentRequested>(_onDeleteContentRequested);
     on<LoadContentRequested>(_onLoadContentRequested);
     on<LoadContentTypesRequested>(_onLoadContentTypesRequested);
     on<LoadMyContentsRequested>(_onLoadMyContentsRequested);
@@ -51,6 +52,24 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
       ));
     } catch (error) {
       emit(ContentUpdateError(
+        message: error.toString(),
+      ));
+    }
+  }
+
+  Future<void> _onDeleteContentRequested(
+    DeleteContentRequested event,
+    Emitter<ContentState> emit,
+  ) async {
+    emit(ContentDeleting());
+    
+    try {
+      await _contentService.deleteContent(event.contentId);
+      emit(const ContentDeleteSuccess(
+        message: 'Content deleted successfully!',
+      ));
+    } catch (error) {
+      emit(ContentDeleteError(
         message: error.toString(),
       ));
     }

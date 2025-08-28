@@ -21,4 +21,7 @@ abstract class UserService {
 
   @PUT('/update')
   Future<UserLoginResponseDto?> update(@Body() UserRequestDto userRequestDto);
+
+  @DELETE('/delete/{id}')
+  Future<CustomResponseDto> delete(@Path('id') int id);
 }

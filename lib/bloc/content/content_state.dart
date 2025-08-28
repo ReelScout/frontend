@@ -97,3 +97,23 @@ class ContentTypesError extends ContentState {
   @override
   List<Object?> get props => [message];
 }
+
+class ContentDeleting extends ContentState {}
+
+class ContentDeleteSuccess extends ContentState {
+  const ContentDeleteSuccess({this.message});
+
+  final String? message;
+
+  @override
+  List<Object?> get props => [message];
+}
+
+class ContentDeleteError extends ContentState {
+  const ContentDeleteError({required this.message});
+
+  final String message;
+
+  @override
+  List<Object?> get props => [message];
+}
