@@ -109,15 +109,19 @@ class ContentFormWrapper extends HookWidget {
       actors.value = newActors;
     }
 
-    void removeActor(int index) {
+    void removeActor(String id) {
       final newActors = List<Actor>.from(actors.value);
-      newActors.removeAt(index);
+      newActors.removeWhere((actor) => actor.id == id);
       actors.value = newActors;
     }
 
     void updateActor(int index, String firstName, String lastName) {
       final newActors = List<Actor>.from(actors.value);
-      newActors[index] = Actor(firstName: firstName, lastName: lastName);
+      newActors[index] = Actor(
+        id: newActors[index].id,
+        firstName: firstName, 
+        lastName: lastName,
+      );
       actors.value = newActors;
     }
 
@@ -127,15 +131,19 @@ class ContentFormWrapper extends HookWidget {
       directors.value = newDirectors;
     }
 
-    void removeDirector(int index) {
+    void removeDirector(String id) {
       final newDirectors = List<Director>.from(directors.value);
-      newDirectors.removeAt(index);
+      newDirectors.removeWhere((director) => director.id == id);
       directors.value = newDirectors;
     }
 
     void updateDirector(int index, String firstName, String lastName) {
       final newDirectors = List<Director>.from(directors.value);
-      newDirectors[index] = Director(firstName: firstName, lastName: lastName);
+      newDirectors[index] = Director(
+        id: newDirectors[index].id,
+        firstName: firstName, 
+        lastName: lastName,
+      );
       directors.value = newDirectors;
     }
 
@@ -422,7 +430,7 @@ class ContentFormWrapper extends HookWidget {
     String title,
     List<dynamic> people,
     VoidCallback onAdd,
-    Function(int) onRemove,
+    Function(String) onRemove,
     Function(int, String, String) onUpdate,
   ) {
     return Column(
@@ -448,7 +456,9 @@ class ContentFormWrapper extends HookWidget {
         ...people.asMap().entries.map((entry) {
           final index = entry.key;
           final person = entry.value;
+          final personId = person is Actor ? person.id : (person is Director ? person.id : '');
           return Padding(
+            key: ValueKey(personId),
             padding: const EdgeInsets.only(bottom: 12),
             child: Row(
               children: [
@@ -479,7 +489,7 @@ class ContentFormWrapper extends HookWidget {
                 ),
                 if (people.length > 1)
                   IconButton(
-                    onPressed: () => onRemove(index),
+                    onPressed: () => onRemove(personId),
                     icon: const Icon(Icons.remove_circle),
                     color: Colors.red,
                   ),
