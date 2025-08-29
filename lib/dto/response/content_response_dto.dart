@@ -12,6 +12,7 @@ class ContentResponseDto {
     required this.title,
     required this.description,
     required this.contentType,
+    required this.genres,
     required this.actors,
     required this.directors,
     this.base64Image,
@@ -24,6 +25,7 @@ class ContentResponseDto {
   final String title;
   final String description;
   final String contentType;
+  final List<String> genres;
   final List<Actor> actors;
   final List<Director> directors;
   final String? base64Image;

@@ -38,15 +38,19 @@ class ContentFormWrapper extends HookWidget {
     final titleCtrl = useTextEditingController();
     final descriptionCtrl = useTextEditingController();
     final trailerUrlCtrl = useTextEditingController();
+    final genreSearchCtrl = useTextEditingController();
     
     // State variables
     final contentType = useState<String?>(null);
+    final selectedGenres = useState<List<String>>([]);
     final actors = useState<List<Actor>>([]);
     final directors = useState<List<Director>>([]);
     final base64Image = useState<String?>(null);
     final contentTypes = useState<List<String>>([]);
+    final genres = useState<List<String>>([]);
     final customContentTypeCtrl = useTextEditingController();
     final showCustomInput = useState<bool>(false);
+    final genreSearchText = useState<String>('');
     
     // Form validation
     final isFormValid = useState(false);
@@ -58,6 +62,7 @@ class ContentFormWrapper extends HookWidget {
       isFormValid.value = titleCtrl.text.isNotEmpty &&
           descriptionCtrl.text.isNotEmpty &&
           hasValidContentType &&
+          selectedGenres.value.isNotEmpty &&
           actors.value.isNotEmpty &&
           directors.value.isNotEmpty;
     }
@@ -78,7 +83,8 @@ class ContentFormWrapper extends HookWidget {
     // Listen to other changes for validation
     useEffect(() {
       validateForm();
-    }, [contentType.value, actors.value, directors.value, showCustomInput.value]);
+      return null;
+    }, [contentType.value, selectedGenres.value, actors.value, directors.value, showCustomInput.value]);
 
     Future<void> pickImage() async {
       try {
@@ -163,6 +169,7 @@ class ContentFormWrapper extends HookWidget {
         title: titleCtrl.text.trim(),
         description: descriptionCtrl.text.trim(),
         contentType: contentType.value!,
+        genres: selectedGenres.value,
         actors: validActors,
         directors: validDirectors,
         base64Image: base64Image.value,
@@ -180,6 +187,7 @@ class ContentFormWrapper extends HookWidget {
         descriptionCtrl.text = initialContent!.description;
         trailerUrlCtrl.text = initialContent!.trailerUrl ?? '';
         contentType.value = initialContent!.contentType;
+        selectedGenres.value = initialContent!.genres;
         actors.value = initialContent!.actors.isNotEmpty 
             ? initialContent!.actors 
             : [Actor(firstName: '', lastName: '')];
@@ -196,8 +204,10 @@ class ContentFormWrapper extends HookWidget {
           directors.value = [Director(firstName: '', lastName: '')];
         }
       }
-      // Load content types from ContentService
+      // Load content types and genres from ContentService
       context.read<ContentBloc>().add(const LoadContentTypesRequested());
+      context.read<ContentBloc>().add(const LoadGenresRequested());
+      return null;
     }, []);
 
     return BlocListener<ContentBloc, ContentState>(
@@ -209,6 +219,16 @@ class ContentFormWrapper extends HookWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Failed to load content types: ${state.message}'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        } else if (state is GenresLoaded) {
+          genres.value = state.genres;
+        } else if (state is GenresError) {
+          // Show error message for genres
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to load genres: ${state.message}'),
               backgroundColor: AppColors.error,
             ),
           );
@@ -346,6 +366,185 @@ class ContentFormWrapper extends HookWidget {
                         },
                       ),
                     ],
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Genres Section
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Genres *',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        // border: Border.all(color: Colors.grey.shade400),
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Search bar inside the genres box
+                          TextField(
+                            controller: genreSearchCtrl,
+                            decoration: InputDecoration(
+                              hintText: 'Search for genres or add new ones...',
+                              prefixIcon: const Icon(Icons.search),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: Colors.grey.shade300),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              isDense: true,
+                            ),
+                            onSubmitted: (value) {
+                              final trimmedValue = value.trim();
+                              if (trimmedValue.isNotEmpty && !selectedGenres.value.contains(trimmedValue)) {
+                                final updatedSelectedGenres = List<String>.from(selectedGenres.value);
+                                updatedSelectedGenres.add(trimmedValue);
+                                selectedGenres.value = updatedSelectedGenres;
+                                
+                                // Add to available genres list if it's new
+                                if (!genres.value.contains(trimmedValue)) {
+                                  final updatedGenres = List<String>.from(genres.value);
+                                  updatedGenres.add(trimmedValue);
+                                  genres.value = updatedGenres;
+                                }
+                              }
+                              genreSearchCtrl.clear();
+                              genreSearchText.value = '';
+                            },
+                            onChanged: (value) {
+                              genreSearchText.value = value;
+                            },
+                          ),
+                          
+                          const SizedBox(height: 12),
+                          
+                          // Search suggestions (when typing)
+                          if (genreSearchText.value.isNotEmpty)
+                            Container(
+                              constraints: const BoxConstraints(maxHeight: 150),
+                              child: ListView(
+                                shrinkWrap: true,
+                                children: [
+                                  // Show filtered existing genres
+                                  ...genres.value.where((genre) {
+                                    final searchText = genreSearchText.value.toLowerCase();
+                                    return genre.toLowerCase().contains(searchText) && 
+                                           !selectedGenres.value.contains(genre);
+                                  }).map((genre) {
+                                    return ListTile(
+                                      dense: true,
+                                      title: Text(genre),
+                                      leading: const Icon(Icons.category, size: 16),
+                                      onTap: () {
+                                        if (!selectedGenres.value.contains(genre)) {
+                                          final updatedSelectedGenres = List<String>.from(selectedGenres.value);
+                                          updatedSelectedGenres.add(genre);
+                                          selectedGenres.value = updatedSelectedGenres;
+                                        }
+                                        genreSearchCtrl.clear();
+                                        genreSearchText.value = '';
+                                      },
+                                    );
+                                  }),
+                                  
+                                  // Show "Add new genre" option if no exact match found
+                                  if (genreSearchText.value.trim().isNotEmpty &&
+                                      !genres.value.any((genre) => genre.toLowerCase() == genreSearchText.value.toLowerCase()) &&
+                                      !selectedGenres.value.contains(genreSearchText.value.trim()))
+                                    ListTile(
+                                      dense: true,
+                                      title: Text('Add "${genreSearchText.value.trim()}"'),
+                                      leading: const Icon(Icons.add, size: 16, color: Colors.green),
+                                      onTap: () {
+                                        final newGenre = genreSearchText.value.trim();
+                                        if (newGenre.isNotEmpty && !selectedGenres.value.contains(newGenre)) {
+                                          final updatedSelectedGenres = List<String>.from(selectedGenres.value);
+                                          updatedSelectedGenres.add(newGenre);
+                                          selectedGenres.value = updatedSelectedGenres;
+                                          
+                                          // Add to available genres list
+                                          if (!genres.value.contains(newGenre)) {
+                                            final updatedGenres = List<String>.from(genres.value);
+                                            updatedGenres.add(newGenre);
+                                            genres.value = updatedGenres;
+                                          }
+                                        }
+                                        genreSearchCtrl.clear();
+                                        genreSearchText.value = '';
+                                      },
+                                    ),
+                                ],
+                              ),
+                            ),
+                          
+                          // Selected genres display
+                          if (selectedGenres.value.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            const Divider(),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Selected Genres:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey.shade700,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: selectedGenres.value.map((genre) {
+                                return Chip(
+                                  label: Text(genre),
+                                  onDeleted: () {
+                                    final updatedSelectedGenres = List<String>.from(selectedGenres.value);
+                                    updatedSelectedGenres.remove(genre);
+                                    selectedGenres.value = updatedSelectedGenres;
+                                  },
+                                  deleteIcon: const Icon(Icons.close, size: 18),
+                                  backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                          
+                          // Loading state
+                          if (genres.value.isEmpty && selectedGenres.value.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 20),
+                              child: Center(
+                                child: Text(
+                                  'Loading genres...',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (selectedGenres.value.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          'Please add at least one genre',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -539,7 +738,7 @@ class ContentFormWrapper extends HookWidget {
           icon: const Icon(Icons.image),
           label: Text(base64Image != null ? 'Change Image' : 'Select Image'),
           style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),

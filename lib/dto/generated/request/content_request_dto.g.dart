@@ -11,6 +11,9 @@ ContentRequestDto _$ContentRequestDtoFromJson(Map<String, dynamic> json) =>
       title: json['title'] as String,
       description: json['description'] as String,
       contentType: json['contentType'] as String,
+      genres: (json['genres'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
       actors: (json['actors'] as List<dynamic>)
           .map((e) => Actor.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -26,6 +29,7 @@ Map<String, dynamic> _$ContentRequestDtoToJson(ContentRequestDto instance) =>
       'title': instance.title,
       'description': instance.description,
       'contentType': instance.contentType,
+      'genres': instance.genres,
       'actors': instance.actors,
       'directors': instance.directors,
       'base64Image': instance.base64Image,

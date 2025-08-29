@@ -98,6 +98,26 @@ class ContentTypesError extends ContentState {
   List<Object?> get props => [message];
 }
 
+class GenresLoading extends ContentState {}
+
+class GenresLoaded extends ContentState {
+  const GenresLoaded({required this.genres});
+
+  final List<String> genres;
+
+  @override
+  List<Object?> get props => [genres];
+}
+
+class GenresError extends ContentState {
+  const GenresError({required this.message});
+
+  final String message;
+
+  @override
+  List<Object?> get props => [message];
+}
+
 class ContentDeleting extends ContentState {}
 
 class ContentDeleteSuccess extends ContentState {

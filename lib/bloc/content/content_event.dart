@@ -42,6 +42,10 @@ class LoadContentTypesRequested extends ContentEvent {
   const LoadContentTypesRequested();
 }
 
+class LoadGenresRequested extends ContentEvent {
+  const LoadGenresRequested();
+}
+
 class LoadMyContentsRequested extends ContentEvent {
   const LoadMyContentsRequested();
 }

@@ -13,6 +13,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     on<DeleteContentRequested>(_onDeleteContentRequested);
     on<LoadContentRequested>(_onLoadContentRequested);
     on<LoadContentTypesRequested>(_onLoadContentTypesRequested);
+    on<LoadGenresRequested>(_onLoadGenresRequested);
     on<LoadMyContentsRequested>(_onLoadMyContentsRequested);
     on<ClearContent>(_onClearContent);
   }
@@ -102,6 +103,22 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
       emit(ContentTypesLoaded(contentTypes: contentTypes));
     } catch (error) {
       emit(ContentTypesError(
+        message: error.toString(),
+      ));
+    }
+  }
+
+  Future<void> _onLoadGenresRequested(
+    LoadGenresRequested event,
+    Emitter<ContentState> emit,
+  ) async {
+    emit(GenresLoading());
+    
+    try {
+      final genres = await _contentService.getGenres();
+      emit(GenresLoaded(genres: genres));
+    } catch (error) {
+      emit(GenresError(
         message: error.toString(),
       ));
     }

@@ -17,9 +17,6 @@ abstract class ContentService {
   @GET('/all')
   Future<List<ContentResponseDto>> getAllContent();
 
-  @GET('/content-types')
-  Future<List<String>> getContentTypes();
-
   @GET('/my-contents')
   Future<List<ContentResponseDto>> getMyContents();
 
@@ -28,4 +25,10 @@ abstract class ContentService {
 
   @DELETE('/delete/{id}')
   Future<CustomResponseDto> deleteContent(@Path('id') int id);
+
+  @GET('/content-types')
+  Future<List<String>> getContentTypes();
+
+  @GET('/genres')
+  Future<List<String>> getGenres();
 }
