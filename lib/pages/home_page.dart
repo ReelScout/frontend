@@ -3,13 +3,58 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../screens/login_screen.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_state.dart';
+import '../bloc/content/content_bloc.dart';
+import '../bloc/content/content_event.dart';
+import '../bloc/content/content_state.dart';
 import '../styles/app_colors.dart';
+import 'dart:convert';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
+  @override
+  bool get wantKeepAlive => true;
+
+  bool _isVisible = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Load content when page initializes
+    context.read<ContentBloc>().add(LoadContentRequested());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Check if this page is now visible (for IndexedStack navigation)
+    final ModalRoute? route = ModalRoute.of(context);
+    if (route != null && route.isCurrent && !_isVisible) {
+      _isVisible = true;
+      // Refresh content when returning to this page
+      if (mounted) {
+        context.read<ContentBloc>().add(LoadContentRequested());
+      }
+    } else if (route == null || !route.isCurrent) {
+      _isVisible = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -131,73 +176,181 @@ class HomePage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Movie cards grid
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 0.75,
-              ),
-              itemCount: 6,
-              itemBuilder: (context, index) {
-                return Card(
-                  elevation: 4,
-                  shadowColor: Colors.black26,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(12),
+            // Dynamic content grid
+            BlocBuilder<ContentBloc, ContentState>(
+              builder: (context, state) {
+                if (state is ContentLoading) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+                
+                if (state is ContentError) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Failed to load content',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Colors.grey[600],
                             ),
                           ),
-                          child: const Icon(
-                            Icons.movie,
-                            size: 40,
-                            color: Colors.grey,
+                          const SizedBox(height: 8),
+                          Text(
+                            state.message,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.grey[500],
+                            ),
+                            textAlign: TextAlign.center,
                           ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              context.read<ContentBloc>().add(LoadContentRequested());
+                            },
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                
+                if (state is ContentLoaded) {
+                  if (state.contents.isEmpty) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32.0),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.movie_outlined,
+                              size: 64,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No content available',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Check back later for new movies and shows',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Colors.grey[500],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Expanded(
-                        flex: 2,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Movie Title ${index + 1}',
-                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Genre • 2024',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
+                    );
+                  }
+                  
+                  return GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.75,
+                    ),
+                    itemCount: state.contents.length,
+                    itemBuilder: (context, index) {
+                      final content = state.contents[index];
+                      return Card(
+                        elevation: 4,
+                        shadowColor: Colors.black26,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ),
-                    ],
-                  ),
-                );
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Container(
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(12),
+                                  ),
+                                ),
+                                child: content.base64Image != null
+                                    ? ClipRRect(
+                                        borderRadius: const BorderRadius.vertical(
+                                          top: Radius.circular(12),
+                                        ),
+                                        child: Image.memory(
+                                          base64Decode(content.base64Image!),
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return const Icon(
+                                              Icons.movie,
+                                              size: 40,
+                                              color: Colors.grey,
+                                            );
+                                          },
+                                        ),
+                                      )
+                                    : const Icon(
+                                        Icons.movie,
+                                        size: 40,
+                                        color: Colors.grey,
+                                      ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      content.title,
+                                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${content.contentType} • ${content.productionCompanyName}',
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: Colors.grey[600],
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                }
+                
+                // Default fallback for other states
+                return const SizedBox.shrink();
               },
             ),
           ],
