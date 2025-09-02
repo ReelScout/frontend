@@ -3,7 +3,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../components/bottom_navbar.dart';
 import '../pages/home_page.dart';
-import '../pages/search_page.dart';
+import 'search_screen.dart';
 import '../pages/profile_page.dart';
 import '../bloc/navigation/navigation_bloc.dart';
 import '../bloc/navigation/navigation_event.dart';
@@ -17,7 +17,7 @@ class HomeScreen extends HookWidget {
   Widget build(BuildContext context) {
     final screens = useMemoized(() => [
       const HomePage(),
-      const SearchPage(),
+      const SearchScreen(),
       const ProfilePage(),
     ]);
 

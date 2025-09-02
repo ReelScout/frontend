@@ -13,6 +13,9 @@ part 'generated/user_service.g.dart';
 abstract class UserService {
   factory UserService(Dio dio, {String? baseUrl, ParseErrorLogger? errorLogger}) = _UserService;
 
+  @GET('/all')
+  Future<List<UserResponseDto>> getAll();
+
   @GET('/me')
   Future<UserResponseDto> getCurrentUser();
 
