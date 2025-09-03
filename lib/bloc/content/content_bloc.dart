@@ -84,7 +84,23 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     
     try {
       final contents = await _contentService.getAllContent();
-      emit(ContentLoaded(contents: contents));
+      
+      // Apply client-side filtering
+      List<dynamic> filteredContents = contents;
+      
+      if (event.genreFilter != null && event.genreFilter!.isNotEmpty) {
+        filteredContents = filteredContents.where((content) {
+          return content.genres.contains(event.genreFilter);
+        }).toList();
+      }
+      
+      if (event.contentTypeFilter != null && event.contentTypeFilter!.isNotEmpty) {
+        filteredContents = filteredContents.where((content) {
+          return content.contentType == event.contentTypeFilter;
+        }).toList();
+      }
+      
+      emit(ContentLoaded(contents: filteredContents.cast()));
     } catch (error) {
       emit(ContentError(
         message: error.toString(),

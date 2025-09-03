@@ -31,7 +31,16 @@ class UpdateContentRequested extends ContentEvent {
 }
 
 class LoadContentRequested extends ContentEvent {
-  const LoadContentRequested();
+  const LoadContentRequested({
+    this.genreFilter,
+    this.contentTypeFilter,
+  });
+
+  final String? genreFilter;
+  final String? contentTypeFilter;
+
+  @override
+  List<Object?> get props => [genreFilter, contentTypeFilter];
 }
 
 class ClearContent extends ContentEvent {

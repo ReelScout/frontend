@@ -22,13 +22,19 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
   bool get wantKeepAlive => true;
 
   bool _isVisible = true;
+  String? _selectedGenre;
+  String? _selectedContentType;
+  List<String> _genres = [];
+  List<String> _contentTypes = [];
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Load content when page initializes
+    // Load content, genres, and content types when page initializes
     context.read<ContentBloc>().add(LoadContentRequested());
+    context.read<ContentBloc>().add(LoadGenresRequested());
+    context.read<ContentBloc>().add(LoadContentTypesRequested());
   }
 
   @override
@@ -46,22 +52,44 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
       _isVisible = true;
       // Refresh content when returning to this page
       if (mounted) {
-        context.read<ContentBloc>().add(LoadContentRequested());
+        context.read<ContentBloc>().add(LoadContentRequested(
+          genreFilter: _selectedGenre,
+          contentTypeFilter: _selectedContentType,
+        ));
       }
     } else if (route == null || !route.isCurrent) {
       _isVisible = false;
     }
   }
 
+  void _applyFilters() {
+    context.read<ContentBloc>().add(LoadContentRequested(
+      genreFilter: _selectedGenre,
+      contentTypeFilter: _selectedContentType,
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
     return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      child: BlocListener<ContentBloc, ContentState>(
+        listener: (context, state) {
+          if (state is GenresLoaded) {
+            setState(() {
+              _genres = state.genres;
+            });
+          } else if (state is ContentTypesLoaded) {
+            setState(() {
+              _contentTypes = state.contentTypes;
+            });
+          }
+        },
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             // Header with app branding and login option
             Row(
               children: [
@@ -167,6 +195,138 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
             ),
             const SizedBox(height: 24),
 
+            // Filters section
+            Card(
+              elevation: 2,
+              shadowColor: Colors.black12,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Filter Content',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Genre',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              DropdownButtonFormField<String>(
+                                initialValue: _selectedGenre,
+                                decoration: InputDecoration(
+                                  hintText: 'All genres',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                                items: [
+                                  const DropdownMenuItem<String>(
+                                    value: null,
+                                    child: Text('All genres'),
+                                  ),
+                                  ..._genres.map((genre) => DropdownMenuItem<String>(
+                                    value: genre,
+                                    child: Text(genre),
+                                  )),
+                                ],
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedGenre = value;
+                                  });
+                                  _applyFilters();
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Content Type',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              DropdownButtonFormField<String>(
+                                initialValue: _selectedContentType,
+                                decoration: InputDecoration(
+                                  hintText: 'All types',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                                items: [
+                                  const DropdownMenuItem<String>(
+                                    value: null,
+                                    child: Text('All types'),
+                                  ),
+                                  ..._contentTypes.map((type) => DropdownMenuItem<String>(
+                                    value: type,
+                                    child: Text(type),
+                                  )),
+                                ],
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedContentType = value;
+                                  });
+                                  _applyFilters();
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (_selectedGenre != null || _selectedContentType != null)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _selectedGenre = null;
+                              _selectedContentType = null;
+                            });
+                            _applyFilters();
+                          },
+                          icon: const Icon(Icons.clear, size: 16),
+                          label: const Text('Clear filters'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
             // Featured content section
             Text(
               'Featured Content',
@@ -218,7 +378,10 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
                           const SizedBox(height: 16),
                           ElevatedButton(
                             onPressed: () {
-                              context.read<ContentBloc>().add(LoadContentRequested());
+                              context.read<ContentBloc>().add(LoadContentRequested(
+                                genreFilter: _selectedGenre,
+                                contentTypeFilter: _selectedContentType,
+                              ));
                             },
                             child: const Text('Retry'),
                           ),
@@ -367,6 +530,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
           ],
         ),
       ),
+    )
     );
   }
 }
