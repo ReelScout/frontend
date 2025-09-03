@@ -32,81 +32,100 @@ class ManageContentsPage extends HookWidget {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: BlocBuilder<ContentBloc, ContentState>(
-            builder: (context, state) {
+          child: RefreshIndicator(
+            onRefresh: () async {
+              contentBloc.add(const LoadMyContentsRequested());
+            },
+            child: BlocBuilder<ContentBloc, ContentState>(
+              builder: (context, state) {
               if (state is ContentLoading) {
-                return const Center(
-                  child: CircularProgressIndicator(),
+                return ListView(
+                  children: const [
+                    SizedBox(height: 200),
+                    Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ],
                 );
               } else if (state is ContentError) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        size: 80,
-                        color: Colors.red,
+                return ListView(
+                  children: [
+                    const SizedBox(height: 100),
+                    Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            size: 80,
+                            color: Colors.red,
+                          ),
+                          const SizedBox(height: 24),
+                          const Text(
+                            'Error loading contents',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            state.message,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          ElevatedButton(
+                            onPressed: () {
+                              contentBloc.add(const LoadMyContentsRequested());
+                            },
+                            child: const Text('Retry'),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        'Error loading contents',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        state.message,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: () {
-                          contentBloc.add(const LoadMyContentsRequested());
-                        },
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 );
               } else if (state is ContentLoaded) {
                 if (state.contents.isEmpty) {
-                  return const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.movie_creation_outlined,
-                          size: 80,
-                          color: Colors.grey,
+                  return ListView(
+                    children: const [
+                      SizedBox(height: 100),
+                      Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.movie_creation_outlined,
+                              size: 80,
+                              color: Colors.grey,
+                            ),
+                            SizedBox(height: 24),
+                            Text(
+                              'No contents yet',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            SizedBox(height: 12),
+                            Text(
+                              'Start creating your first content by tapping the + button',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
                         ),
-                        SizedBox(height: 24),
-                        Text(
-                          'No contents yet',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        SizedBox(height: 12),
-                        Text(
-                          'Start creating your first content by tapping the + button',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   );
                 }
                 
@@ -141,6 +160,7 @@ class ManageContentsPage extends HookWidget {
                 ),
               );
             },
+            ),
           ),
         ),
       ),

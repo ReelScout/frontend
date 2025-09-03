@@ -85,8 +85,17 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
             });
           }
         },
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
+        child: RefreshIndicator(
+          onRefresh: () async {
+            context.read<ContentBloc>().add(LoadContentRequested(
+              genreFilter: _selectedGenre,
+              contentTypeFilter: _selectedContentType,
+            ));
+            context.read<ContentBloc>().add(LoadGenresRequested());
+            context.read<ContentBloc>().add(LoadContentTypesRequested());
+          },
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -528,9 +537,10 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
               },
             ),
           ],
+          ),
+        ),
         ),
       ),
-    )
     );
   }
 }
