@@ -16,6 +16,9 @@ MemberResponseDto _$MemberResponseDtoFromJson(Map<String, dynamic> json) =>
       firstName: json['firstName'] as String,
       lastName: json['lastName'] as String,
       birthDate: DateTime.parse(json['birthDate'] as String),
+      favoriteGenres: (json['favoriteGenres'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
     );
 
 Map<String, dynamic> _$MemberResponseDtoToJson(MemberResponseDto instance) =>
@@ -28,6 +31,7 @@ Map<String, dynamic> _$MemberResponseDtoToJson(MemberResponseDto instance) =>
       'firstName': instance.firstName,
       'lastName': instance.lastName,
       'birthDate': instance.birthDate.toIso8601String(),
+      'favoriteGenres': instance.favoriteGenres,
     };
 
 const _$RoleEnumMap = {

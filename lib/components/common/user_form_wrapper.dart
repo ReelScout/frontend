@@ -1,9 +1,13 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../bloc/content/content_bloc.dart';
+import '../../bloc/content/content_event.dart';
+import '../../bloc/content/content_state.dart';
 import '../../dto/request/member_request_dto.dart';
 import '../../dto/request/production_company_request_dto.dart';
 import '../../dto/request/user_request_dto.dart';
@@ -13,6 +17,7 @@ import '../../dto/response/user_response_dto.dart';
 import '../../model/location.dart';
 import '../../model/owner.dart';
 import '../../styles/app_colors.dart';
+import '../content/genres_section.dart';
 import '../signup/signup_form_components.dart';
 import '../signup/account_form_section.dart';
 import '../signup/member_form_section.dart';
@@ -61,6 +66,10 @@ class UserFormWrapper extends HookWidget {
     final birthDate = useState<DateTime?>(
       existingUser is MemberResponseDto ? (existingUser as MemberResponseDto).birthDate : null,
     );
+    final selectedGenres = useState<List<String>>(
+      existingUser is MemberResponseDto ? (existingUser as MemberResponseDto).favoriteGenres ?? [] : [],
+    );
+    final genres = useState<List<String>>([]);
 
     // Company fields
     final companyNameCtrl = useTextEditingController(
@@ -150,6 +159,14 @@ class UserFormWrapper extends HookWidget {
       }
     }
 
+    // Load genres for member forms
+    useEffect(() {
+      if (!isCompanyAccount) {
+        context.read<ContentBloc>().add(const LoadGenresRequested());
+      }
+      return null;
+    }, [isCompanyAccount]);
+
     void submit() {
       if (!formKey.currentState!.validate()) return;
 
@@ -207,13 +224,28 @@ class UserFormWrapper extends HookWidget {
           firstName: firstNameCtrl.text.trim(),
           lastName: lastNameCtrl.text.trim(),
           birthDate: birthDate.value!,
+          favoriteGenres: selectedGenres.value.isEmpty ? null : selectedGenres.value,
         );
       }
 
       onSubmit(request);
     }
 
-    return Scaffold(
+    return BlocListener<ContentBloc, ContentState>(
+      listener: (context, state) {
+        if (state is GenresLoaded) {
+          genres.value = state.genres;
+        } else if (state is GenresError) {
+          // Show error message and provide fallback
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to load genres: ${state.message}'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
       backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
         title: Text(title),
@@ -248,14 +280,24 @@ class UserFormWrapper extends HookWidget {
                   ),
                   const SizedBox(height: 16),
                 ],
-                if (!isCompanyAccount)
+                if (!isCompanyAccount) ...[
                   MemberFormSection(
                     firstNameController: firstNameCtrl,
                     lastNameController: lastNameCtrl,
                     birthDate: birthDate.value,
                     onBirthDatePick: chooseBirthDate,
                     isEnabled: !isLoading,
+                    genresSection: GenresSection(
+                      availableGenres: genres.value,
+                      selectedGenres: selectedGenres.value,
+                      onGenresChanged: (newGenres) {
+                        selectedGenres.value = newGenres;
+                      },
+                      isRequired: false,
+                      readOnly: true,
+                    ),
                   ),
+                ],
                 if (isCompanyAccount)
                   CompanyFormSections(
                     companyNameController: companyNameCtrl,
@@ -308,6 +350,7 @@ class UserFormWrapper extends HookWidget {
             ),
           ),
         ),
+      ),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:frontend/components/content/genres_section.dart';
 import 'signup_form_components.dart';
 
 class MemberFormSection extends HookWidget {
@@ -8,6 +9,7 @@ class MemberFormSection extends HookWidget {
     required this.firstNameController,
     required this.lastNameController,
     required this.birthDate,
+    required this.genresSection,
     required this.onBirthDatePick,
     this.isEnabled = true,
   });
@@ -16,6 +18,7 @@ class MemberFormSection extends HookWidget {
   final TextEditingController lastNameController;
   final DateTime? birthDate;
   final VoidCallback onBirthDatePick;
+  final GenresSection genresSection;
   final bool isEnabled;
 
   @override
@@ -44,6 +47,8 @@ class MemberFormSection extends HookWidget {
             birthDate: birthDate,
             onPick: isEnabled ? onBirthDatePick : null,
           ),
+          const SizedBox(height: 12),
+          genresSection,
         ],
       ),
     );

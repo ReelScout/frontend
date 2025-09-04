@@ -12,12 +12,14 @@ class MemberRequestDto extends UserRequestDto {
     super.base64Image,
     required this.firstName,
     required this.lastName,
-    required this.birthDate
+    required this.birthDate,
+    this.favoriteGenres,
   });
 
   final String firstName;
   final String lastName;
   final DateTime birthDate;
+  final List<String>? favoriteGenres;
 
 
   factory MemberRequestDto.fromJson(Map<String, dynamic> json) =>

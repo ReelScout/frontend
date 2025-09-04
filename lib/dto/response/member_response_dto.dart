@@ -14,12 +14,14 @@ class MemberResponseDto extends UserResponseDto {
     super.base64Image,
     required this.firstName,
     required this.lastName,
-    required this.birthDate
+    required this.birthDate,
+    this.favoriteGenres,
   });
 
   final String firstName;
   final String lastName;
   final DateTime birthDate;
+  final List<String>? favoriteGenres;
 
   factory MemberResponseDto.fromJson(Map<String, dynamic> json) =>
       _$MemberResponseDtoFromJson(json);
