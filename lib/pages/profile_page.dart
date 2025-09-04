@@ -278,6 +278,7 @@ class ProfilePage extends StatelessWidget {
         _infoTile(context, Icons.badge, 'First name', user.firstName),
         _infoTile(context, Icons.badge_outlined, 'Last name', user.lastName),
         _infoTile(context, Icons.cake, 'Birth date', birthDateStr),
+        _buildPreferredGenresSection(context, user.favoriteGenres),
       ];
     } else if (user is ProductionCompanyResponseDto) {
       final loc = user.location;
@@ -339,6 +340,48 @@ class ProfilePage extends StatelessWidget {
       leading: Icon(icon, color: theme.primaryColor),
       title: Text(label, style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600])),
       subtitle: Text(value, style: theme.textTheme.bodyMedium),
+    );
+  }
+
+  Widget _buildPreferredGenresSection(BuildContext context, List<String>? favoriteGenres) {
+    final theme = Theme.of(context);
+    final primary = theme.primaryColor;
+    
+    Widget genresContent;
+    if (favoriteGenres == null || favoriteGenres.isEmpty) {
+      genresContent = Text(
+        'No preferred genres',
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: Colors.grey[600],
+        ),
+      );
+    } else {
+      genresContent = Wrap(
+        spacing: 8,
+        runSpacing: 4,
+        children: favoriteGenres.map((genre) => Chip(
+          label: Text(genre),
+          backgroundColor: primary.withValues(alpha: 0.1),
+          labelStyle: TextStyle(
+            color: primary,
+            fontSize: 12,
+          ),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        )).toList(),
+      );
+    }
+
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(Icons.movie_filter, color: primary),
+      title: Text(
+        'Preferred Genres',
+        style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+      ),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: genresContent,
+      ),
     );
   }
 
