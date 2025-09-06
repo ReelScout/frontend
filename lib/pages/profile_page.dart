@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../config/injection_container.dart';
 import '../screens/login_screen.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_state.dart';
@@ -11,6 +12,9 @@ import '../components/profile_avatar.dart';
 import '../components/password_change_helper.dart';
 import '../screens/profile_update_screen.dart';
 import '../pages/manage_contents_page.dart';
+import '../pages/watchlists_page.dart';
+import '../bloc/watchlist/watchlist_bloc.dart';
+import '../services/watchlist_service.dart';
 import '../dto/response/user_response_dto.dart';
 import '../dto/response/member_response_dto.dart';
 import '../dto/response/production_company_response_dto.dart';
@@ -203,6 +207,39 @@ class ProfilePage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       backgroundColor: Theme.of(context).primaryColor,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 12),
+                
+                // My Watchlists Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      // Navigate to watchlists page
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BlocProvider(
+                            create: (context) => WatchlistBloc(
+                              watchlistService: getIt<WatchlistService>(),
+                            ),
+                            child: const WatchlistsPage(),
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.playlist_play),
+                    label: const Text('My Watchlists'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.9),
                       foregroundColor: Colors.white,
                     ),
                   ),

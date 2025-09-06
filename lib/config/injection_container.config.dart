@@ -19,6 +19,7 @@ import 'package:frontend/services/content_service.dart' as _i53;
 import 'package:frontend/services/search_service.dart' as _i1063;
 import 'package:frontend/services/token_service.dart' as _i768;
 import 'package:frontend/services/user_service.dart' as _i625;
+import 'package:frontend/services/watchlist_service.dart' as _i156;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
 
@@ -50,6 +51,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.singleton<_i1063.SearchService>(
       () => serviceModule.searchService(gh<_i361.Dio>()),
+    );
+    gh.singleton<_i156.WatchlistService>(
+      () => serviceModule.watchlistService(gh<_i361.Dio>()),
     );
     return this;
   }

@@ -17,5 +17,6 @@ class WatchlistWithContentsDto extends WatchlistResponseDto {
 
   factory WatchlistWithContentsDto.fromJson(Map<String, dynamic> json) => _$WatchlistWithContentsDtoFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$WatchlistWithContentsDtoToJson(this);
 }

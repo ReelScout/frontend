@@ -3,6 +3,7 @@ import 'package:frontend/services/auth_service.dart';
 import 'package:frontend/services/content_service.dart';
 import 'package:frontend/services/search_service.dart';
 import 'package:frontend/services/user_service.dart';
+import 'package:frontend/services/watchlist_service.dart';
 import 'package:injectable/injectable.dart';
 
 @module
@@ -18,4 +19,7 @@ abstract class ServiceModule {
   
   @singleton
   SearchService searchService(Dio dio) => SearchService(dio, baseUrl: dio.options.baseUrl);
+
+  @singleton
+  WatchlistService watchlistService(Dio dio) => WatchlistService(dio, baseUrl: "${dio.options.baseUrl}/user/watchlist");
 }
