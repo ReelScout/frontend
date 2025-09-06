@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend/bloc/search/search_bloc.dart';
+import 'package:frontend/bloc/watchlist/watchlist_bloc.dart';
 import 'package:frontend/config/injection_container.dart';
+import 'package:frontend/services/search_service.dart';
+import 'package:frontend/services/watchlist_service.dart';
 import 'screens/home_screen.dart';
 import 'bloc/auth/auth_bloc.dart';
 import 'bloc/auth/auth_event.dart';
@@ -45,6 +49,16 @@ class ReelScoutApp extends StatelessWidget {
             contentService: getIt<ContentService>(),
           ),
         ),
+        BlocProvider<SearchBloc>(
+          create: (context) => SearchBloc(
+            searchService: getIt<SearchService>(),
+          ),
+        ),
+        BlocProvider<WatchlistBloc>(
+          create: (context) => WatchlistBloc(
+            watchlistService: getIt<WatchlistService>(),
+          ),
+        )
       ],
       child: MaterialApp(
         title: 'ReelScout',
