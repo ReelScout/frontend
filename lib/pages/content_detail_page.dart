@@ -9,6 +9,7 @@ import 'package:frontend/bloc/watchlist/watchlist_state.dart';
 import 'package:frontend/dto/response/content_response_dto.dart';
 import 'package:frontend/styles/app_colors.dart';
 import 'package:frontend/utils/base64_image_cache.dart';
+import 'package:frontend/pages/forum/forum_page.dart';
 
 class ContentDetailPage extends StatelessWidget {
   final ContentResponseDto content;
@@ -76,6 +77,17 @@ class ContentDetailPage extends StatelessWidget {
             onPressed: () => _showWatchlistDialog(context),
             icon: const Icon(Icons.add_circle),
             tooltip: 'Add to watchlist',
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ForumPage(content: content),
+                ),
+              );
+            },
+            icon: const Icon(Icons.forum),
+            tooltip: 'Open forum',
           ),
         ],
       ),

@@ -4,6 +4,7 @@ import 'package:frontend/services/content_service.dart';
 import 'package:frontend/services/search_service.dart';
 import 'package:frontend/services/user_service.dart';
 import 'package:frontend/services/watchlist_service.dart';
+import 'package:frontend/services/forum_service.dart';
 import 'package:injectable/injectable.dart';
 
 @module
@@ -22,4 +23,7 @@ abstract class ServiceModule {
 
   @singleton
   WatchlistService watchlistService(Dio dio) => WatchlistService(dio, baseUrl: "${dio.options.baseUrl}/user/watchlist");
+
+  @singleton
+  ForumService forumService(Dio dio) => ForumService(dio, baseUrl: "${dio.options.baseUrl}/content/forum");
 }
