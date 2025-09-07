@@ -91,3 +91,60 @@ class ClearWatchlistOperationState extends WatchlistEvent {
   @override
   String toString() => 'ClearWatchlistOperationState()';
 }
+
+/// Event to add content to a specific watchlist
+/// 
+/// [watchlistId] is the unique identifier of the watchlist to add content to
+/// [contentId] is the unique identifier of the content to add
+class AddContentToWatchlist extends WatchlistEvent {
+  const AddContentToWatchlist({
+    required this.watchlistId,
+    required this.contentId,
+  });
+
+  final int watchlistId;
+  final int contentId;
+
+  @override
+  List<Object?> get props => [watchlistId, contentId];
+
+  @override
+  String toString() => 'AddContentToWatchlist(watchlistId: $watchlistId, contentId: $contentId)';
+}
+
+/// Event to remove content from a specific watchlist
+/// 
+/// [watchlistId] is the unique identifier of the watchlist to remove content from
+/// [contentId] is the unique identifier of the content to remove
+class RemoveContentFromWatchlist extends WatchlistEvent {
+  const RemoveContentFromWatchlist({
+    required this.watchlistId,
+    required this.contentId,
+  });
+
+  final int watchlistId;
+  final int contentId;
+
+  @override
+  List<Object?> get props => [watchlistId, contentId];
+
+  @override
+  String toString() => 'RemoveContentFromWatchlist(watchlistId: $watchlistId, contentId: $contentId)';
+}
+
+/// Event to load watchlists that contain a specific content
+/// 
+/// [contentId] is the unique identifier of the content to check
+class LoadWatchlistsByContentId extends WatchlistEvent {
+  const LoadWatchlistsByContentId({
+    required this.contentId,
+  });
+
+  final int contentId;
+
+  @override
+  List<Object?> get props => [contentId];
+
+  @override
+  String toString() => 'LoadWatchlistsByContentId(contentId: $contentId)';
+}

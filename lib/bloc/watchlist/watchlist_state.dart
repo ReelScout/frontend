@@ -30,13 +30,15 @@ class WatchlistLoaded extends WatchlistState {
   const WatchlistLoaded({
     required this.watchlists,
     this.currentOperation,
+    this.watchlistsWithContent,
   });
 
   final List<WatchlistResponseDto> watchlists;
   final WatchlistOperation? currentOperation;
+  final List<WatchlistResponseDto>? watchlistsWithContent;
 
   @override
-  List<Object?> get props => [watchlists, currentOperation];
+  List<Object?> get props => [watchlists, currentOperation, watchlistsWithContent];
 
   @override
   String toString() => 'WatchlistLoaded(count: ${watchlists.length}, operation: $currentOperation)';
@@ -45,10 +47,12 @@ class WatchlistLoaded extends WatchlistState {
   WatchlistLoaded copyWith({
     List<WatchlistResponseDto>? watchlists,
     WatchlistOperation? currentOperation,
+    List<WatchlistResponseDto>? watchlistsWithContent,
   }) {
     return WatchlistLoaded(
       watchlists: watchlists ?? this.watchlists,
       currentOperation: currentOperation ?? this.currentOperation,
+      watchlistsWithContent: watchlistsWithContent ?? this.watchlistsWithContent,
     );
   }
 
@@ -57,6 +61,7 @@ class WatchlistLoaded extends WatchlistState {
     return WatchlistLoaded(
       watchlists: watchlists,
       currentOperation: null,
+      watchlistsWithContent: watchlistsWithContent,
     );
   }
 
@@ -69,6 +74,7 @@ class WatchlistLoaded extends WatchlistState {
     return WatchlistLoaded(
       watchlists: updatedList,
       currentOperation: currentOperation,
+      watchlistsWithContent: watchlistsWithContent,
     );
   }
 
@@ -77,6 +83,7 @@ class WatchlistLoaded extends WatchlistState {
     return WatchlistLoaded(
       watchlists: [...watchlists, newWatchlist],
       currentOperation: currentOperation,
+      watchlistsWithContent: watchlistsWithContent,
     );
   }
 
@@ -87,6 +94,7 @@ class WatchlistLoaded extends WatchlistState {
     return WatchlistLoaded(
       watchlists: updatedList,
       currentOperation: currentOperation,
+      watchlistsWithContent: watchlistsWithContent,
     );
   }
 }
@@ -182,6 +190,8 @@ enum WatchlistOperationType {
   add,
   update,
   delete,
+  addContent,
+  removeContent,
 }
 
 /// Status of a watchlist operation

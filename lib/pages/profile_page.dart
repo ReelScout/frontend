@@ -215,35 +215,37 @@ class ProfilePage extends StatelessWidget {
                 const SizedBox(height: 12),
                 
                 // My Watchlists Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      // Navigate to watchlists page
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => BlocProvider(
-                            create: (context) => WatchlistBloc(
-                              watchlistService: getIt<WatchlistService>(),
+                if (userProfileState is UserProfileLoaded && userProfileState.user is MemberResponseDto) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        // Navigate to watchlists page
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BlocProvider(
+                              create: (context) => WatchlistBloc(
+                                watchlistService: getIt<WatchlistService>(),
+                              ),
+                              child: const WatchlistsPage(),
                             ),
-                            child: const WatchlistsPage(),
                           ),
+                        );
+                      },
+                      icon: const Icon(Icons.playlist_play),
+                      label: const Text('My Watchlists'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      );
-                    },
-                    icon: const Icon(Icons.playlist_play),
-                    label: const Text('My Watchlists'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.9),
+                        foregroundColor: Colors.white,
                       ),
-                      backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.9),
-                      foregroundColor: Colors.white,
                     ),
                   ),
-                ),
+                ],
                 
                 const SizedBox(height: 12),
                 
