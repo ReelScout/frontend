@@ -148,3 +148,37 @@ class LoadWatchlistsByContentId extends WatchlistEvent {
   @override
   String toString() => 'LoadWatchlistsByContentId(contentId: $contentId)';
 }
+
+/// Event to load public watchlists for a specific member
+/// 
+/// [memberId] is the unique identifier of the member whose public watchlists to load
+class LoadPublicWatchlistsByMemberId extends WatchlistEvent {
+  const LoadPublicWatchlistsByMemberId({
+    required this.memberId,
+  });
+
+  final int memberId;
+
+  @override
+  List<Object?> get props => [memberId];
+
+  @override
+  String toString() => 'LoadPublicWatchlistsByMemberId(memberId: $memberId)';
+}
+
+/// Event to load a specific watchlist by ID with its contents
+/// 
+/// [watchlistId] is the unique identifier of the watchlist to load
+class LoadWatchlistById extends WatchlistEvent {
+  const LoadWatchlistById({
+    required this.watchlistId,
+  });
+
+  final int watchlistId;
+
+  @override
+  List<Object?> get props => [watchlistId];
+
+  @override
+  String toString() => 'LoadWatchlistById(watchlistId: $watchlistId)';
+}

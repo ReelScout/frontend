@@ -3,6 +3,7 @@ import 'package:retrofit/retrofit.dart';
 import 'package:dio/dio.dart';
 import '../dto/request/watchlist_request_dto.dart';
 import '../dto/response/watchlist_response_dto.dart';
+import '../dto/response/watchlist_with_contents_response_dto.dart';
 
 part 'generated/watchlist_service.g.dart';
 
@@ -30,4 +31,10 @@ abstract class WatchlistService {
 
   @GET('/by-content/{contentId}')
   Future<List<WatchlistResponseDto>> getWatchlistsByContentId(@Path() int contentId);
+
+  @GET('/public/{memberId}')
+  Future<List<WatchlistResponseDto>> getPublicWatchlistsByMemberId(@Path() int memberId);
+
+  @GET('/{id}')
+  Future<WatchlistWithContentsDto> getWatchlistById(@Path() int id);
 }

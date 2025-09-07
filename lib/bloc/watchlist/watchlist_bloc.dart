@@ -21,6 +21,8 @@ class WatchlistBloc extends Bloc<WatchlistEvent, WatchlistState> {
     on<AddContentToWatchlist>(_onAddContentToWatchlist);
     on<RemoveContentFromWatchlist>(_onRemoveContentFromWatchlist);
     on<LoadWatchlistsByContentId>(_onLoadWatchlistsByContentId);
+    on<LoadPublicWatchlistsByMemberId>(_onLoadPublicWatchlistsByMemberId);
+    on<LoadWatchlistById>(_onLoadWatchlistById);
   }
 
   final WatchlistService _watchlistService;
@@ -457,6 +459,71 @@ class WatchlistBloc extends Bloc<WatchlistEvent, WatchlistState> {
       emit(currentState.copyWith(
         watchlistsWithContent: [],
       ));
+    }
+  }
+
+  /// Handles loading public watchlists for a specific member
+  Future<void> _onLoadPublicWatchlistsByMemberId(
+    LoadPublicWatchlistsByMemberId event,
+    Emitter<WatchlistState> emit,
+  ) async {
+    // We don't require a loaded state for this operation since it's independent
+    // If state is initial, we'll create a minimal loaded state
+    WatchlistLoaded currentState;
+    if (state is WatchlistLoaded) {
+      currentState = state as WatchlistLoaded;
+    } else {
+      currentState = const WatchlistLoaded(watchlists: []);
+    }
+
+    try {
+      final publicWatchlists = await _watchlistService.getPublicWatchlistsByMemberId(event.memberId);
+
+      emit(currentState.copyWith(
+        publicWatchlists: publicWatchlists,
+      ));
+    } catch (e) {
+      // If we can't load public watchlists, set empty list
+      emit(currentState.copyWith(
+        publicWatchlists: [],
+      ));
+    }
+  }
+
+  /// Handles loading a specific watchlist by ID with its contents
+  Future<void> _onLoadWatchlistById(
+    LoadWatchlistById event,
+    Emitter<WatchlistState> emit,
+  ) async {
+    // We don't require a loaded state for this operation since it's independent
+    // If state is initial, we'll create a minimal loaded state
+    WatchlistLoaded currentState;
+    if (state is WatchlistLoaded) {
+      currentState = state as WatchlistLoaded;
+    } else {
+      currentState = const WatchlistLoaded(watchlists: []);
+    }
+
+    try {
+      final watchlistDetails = await _watchlistService.getWatchlistById(event.watchlistId);
+
+      emit(currentState.copyWith(
+        watchlistDetails: watchlistDetails,
+      ));
+    } catch (e) {
+      // If we can't load watchlist details, emit error or handle gracefully
+      String errorMessage = 'Failed to load watchlist details';
+      if (e is DioException && e.response?.data != null) {
+        try {
+          final customResponse = CustomResponseDto.fromJson(e.response!.data);
+          if (customResponse.message.isNotEmpty) {
+            errorMessage = customResponse.message;
+          }
+        } catch (_) {
+          // Use fallback message
+        }
+      }
+      emit(WatchlistError(message: errorMessage));
     }
   }
 

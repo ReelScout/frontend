@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:dio/dio.dart';
 import 'package:frontend/dto/response/custom_response_dto.dart';
 import '../dto/request/user_password_change_request_dto.dart';
@@ -6,82 +7,68 @@ import '../services/user_service.dart';
 import '../styles/app_colors.dart';
 import '../config/injection_container.dart';
 
-class PasswordChangeDialog extends StatefulWidget {
+class PasswordChangeDialog extends HookWidget {
   const PasswordChangeDialog({super.key});
 
   @override
-  State<PasswordChangeDialog> createState() => _PasswordChangeDialogState();
-}
+  Widget build(BuildContext context) {
+    final formKey = useMemoized(() => GlobalKey<FormState>());
+    final currentPasswordController = useTextEditingController();
+    final newPasswordController = useTextEditingController();
+    final confirmPasswordController = useTextEditingController();
+    
+    final isCurrentPasswordVisible = useState(false);
+    final isNewPasswordVisible = useState(false);
+    final isConfirmPasswordVisible = useState(false);
+    final isLoading = useState(false);
 
-class _PasswordChangeDialogState extends State<PasswordChangeDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _currentPasswordController = TextEditingController();
-  final _newPasswordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-
-  bool _isCurrentPasswordVisible = false;
-  bool _isNewPasswordVisible = false;
-  bool _isConfirmPasswordVisible = false;
-  bool _isLoading = false;
-
-  @override
-  void dispose() {
-    _currentPasswordController.dispose();
-    _newPasswordController.dispose();
-    _confirmPasswordController.dispose();
-    super.dispose();
-  }
-
-  String? _validateCurrentPassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Current password is required';
-    }
-    return null;
-  }
-
-  String? _validateNewPassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'New password is required';
-    }
-    if (value.length < 8) {
-      return 'New password must be at least 8 characters';
-    }
-    if (!RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)').hasMatch(value)) {
-      return 'Password must contain uppercase, lowercase, and number';
-    }
-    return null;
-  }
-
-  String? _validateConfirmPassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please confirm your password';
-    }
-    if (value != _newPasswordController.text) {
-      return 'Passwords do not match';
-    }
-    return null;
-  }
-
-  Future<void> _handlePasswordChange() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
+    String? validateCurrentPassword(String? value) {
+      if (value == null || value.isEmpty) {
+        return 'Current password is required';
+      }
+      return null;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    String? validateNewPassword(String? value) {
+      if (value == null || value.isEmpty) {
+        return 'New password is required';
+      }
+      if (value.length < 8) {
+        return 'New password must be at least 8 characters';
+      }
+      if (!RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)').hasMatch(value)) {
+        return 'Password must contain uppercase, lowercase, and number';
+      }
+      return null;
+    }
 
-    try {
-      final userService = getIt<UserService>();
-      final requestDto = UserPasswordChangeRequestDto(
-        currentPassword: _currentPasswordController.text,
-        newPassword: _newPasswordController.text,
-        confirmPassword: _confirmPasswordController.text,
-      );
+    String? validateConfirmPassword(String? value) {
+      if (value == null || value.isEmpty) {
+        return 'Please confirm your password';
+      }
+      if (value != newPasswordController.text) {
+        return 'Passwords do not match';
+      }
+      return null;
+    }
 
-      CustomResponseDto response = await userService.changePassword(requestDto);
+    Future<void> handlePasswordChange() async {
+      if (!formKey.currentState!.validate()) {
+        return;
+      }
 
-      if (mounted) {
+      isLoading.value = true;
+
+      try {
+        final userService = getIt<UserService>();
+        final requestDto = UserPasswordChangeRequestDto(
+          currentPassword: currentPasswordController.text,
+          newPassword: newPasswordController.text,
+          confirmPassword: confirmPasswordController.text,
+        );
+
+        CustomResponseDto response = await userService.changePassword(requestDto);
+
         Navigator.of(context).pop(true);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -89,9 +76,7 @@ class _PasswordChangeDialogState extends State<PasswordChangeDialog> {
             backgroundColor: AppColors.success,
           ),
         );
-      }
-    } catch (e) {
-      if (mounted) {
+      } catch (e) {
         final String error = e is DioException ? CustomResponseDto.fromJson(e.response?.data).message : 'An unexpected error occurred';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -99,18 +84,10 @@ class _PasswordChangeDialogState extends State<PasswordChangeDialog> {
             backgroundColor: AppColors.error,
           ),
         );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+      } finally {
+        isLoading.value = false;
       }
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(
         'Change Password',
@@ -122,15 +99,15 @@ class _PasswordChangeDialogState extends State<PasswordChangeDialog> {
       content: SizedBox(
         width: double.maxFinite,
         child: Form(
-          key: _formKey,
+          key: formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Current Password Field
               TextFormField(
-                controller: _currentPasswordController,
-                obscureText: !_isCurrentPasswordVisible,
-                validator: _validateCurrentPassword,
+                controller: currentPasswordController,
+                obscureText: !isCurrentPasswordVisible.value,
+                validator: validateCurrentPassword,
                 decoration: InputDecoration(
                   labelText: 'Current Password',
                   hintText: 'Enter your current password',
@@ -146,13 +123,11 @@ class _PasswordChangeDialogState extends State<PasswordChangeDialog> {
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _isCurrentPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                      isCurrentPasswordVisible.value ? Icons.visibility : Icons.visibility_off,
                       color: AppColors.textSecondary,
                     ),
                     onPressed: () {
-                      setState(() {
-                        _isCurrentPasswordVisible = !_isCurrentPasswordVisible;
-                      });
+                      isCurrentPasswordVisible.value = !isCurrentPasswordVisible.value;
                     },
                   ),
                 ),
@@ -161,9 +136,9 @@ class _PasswordChangeDialogState extends State<PasswordChangeDialog> {
 
               // New Password Field
               TextFormField(
-                controller: _newPasswordController,
-                obscureText: !_isNewPasswordVisible,
-                validator: _validateNewPassword,
+                controller: newPasswordController,
+                obscureText: !isNewPasswordVisible.value,
+                validator: validateNewPassword,
                 decoration: InputDecoration(
                   labelText: 'New Password',
                   hintText: 'Enter your new password',
@@ -179,13 +154,11 @@ class _PasswordChangeDialogState extends State<PasswordChangeDialog> {
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _isNewPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                      isNewPasswordVisible.value ? Icons.visibility : Icons.visibility_off,
                       color: AppColors.textSecondary,
                     ),
                     onPressed: () {
-                      setState(() {
-                        _isNewPasswordVisible = !_isNewPasswordVisible;
-                      });
+                      isNewPasswordVisible.value = !isNewPasswordVisible.value;
                     },
                   ),
                 ),
@@ -194,9 +167,9 @@ class _PasswordChangeDialogState extends State<PasswordChangeDialog> {
 
               // Confirm Password Field
               TextFormField(
-                controller: _confirmPasswordController,
-                obscureText: !_isConfirmPasswordVisible,
-                validator: _validateConfirmPassword,
+                controller: confirmPasswordController,
+                obscureText: !isConfirmPasswordVisible.value,
+                validator: validateConfirmPassword,
                 decoration: InputDecoration(
                   labelText: 'Confirm New Password',
                   hintText: 'Confirm your new password',
@@ -212,13 +185,11 @@ class _PasswordChangeDialogState extends State<PasswordChangeDialog> {
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                      isConfirmPasswordVisible.value ? Icons.visibility : Icons.visibility_off,
                       color: AppColors.textSecondary,
                     ),
                     onPressed: () {
-                      setState(() {
-                        _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
-                      });
+                      isConfirmPasswordVisible.value = !isConfirmPasswordVisible.value;
                     },
                   ),
                 ),
@@ -240,18 +211,18 @@ class _PasswordChangeDialogState extends State<PasswordChangeDialog> {
       actions: [
         // Cancel Button
         TextButton(
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
+          onPressed: isLoading.value ? null : () => Navigator.of(context).pop(false),
           child: Text(
             'Cancel',
             style: TextStyle(
-              color: _isLoading ? AppColors.textSecondary : AppColors.textPrimary,
+              color: isLoading.value ? AppColors.textSecondary : AppColors.textPrimary,
             ),
           ),
         ),
 
         // Change Password Button
         ElevatedButton(
-          onPressed: _isLoading ? null : _handlePasswordChange,
+          onPressed: isLoading.value ? null : handlePasswordChange,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: AppColors.textOnPrimary,
@@ -259,7 +230,7 @@ class _PasswordChangeDialogState extends State<PasswordChangeDialog> {
               borderRadius: BorderRadius.circular(8),
             ),
           ),
-          child: _isLoading
+          child: isLoading.value
               ? const SizedBox(
                   width: 16,
                   height: 16,

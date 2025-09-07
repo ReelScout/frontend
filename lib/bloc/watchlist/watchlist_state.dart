@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../../dto/response/watchlist_response_dto.dart';
+import '../../dto/response/watchlist_with_contents_response_dto.dart';
 
 /// Base class for all watchlist states
 abstract class WatchlistState extends Equatable {
@@ -31,14 +32,18 @@ class WatchlistLoaded extends WatchlistState {
     required this.watchlists,
     this.currentOperation,
     this.watchlistsWithContent,
+    this.publicWatchlists,
+    this.watchlistDetails,
   });
 
   final List<WatchlistResponseDto> watchlists;
   final WatchlistOperation? currentOperation;
   final List<WatchlistResponseDto>? watchlistsWithContent;
+  final List<WatchlistResponseDto>? publicWatchlists;
+  final WatchlistWithContentsDto? watchlistDetails;
 
   @override
-  List<Object?> get props => [watchlists, currentOperation, watchlistsWithContent];
+  List<Object?> get props => [watchlists, currentOperation, watchlistsWithContent, publicWatchlists, watchlistDetails];
 
   @override
   String toString() => 'WatchlistLoaded(count: ${watchlists.length}, operation: $currentOperation)';
@@ -48,11 +53,15 @@ class WatchlistLoaded extends WatchlistState {
     List<WatchlistResponseDto>? watchlists,
     WatchlistOperation? currentOperation,
     List<WatchlistResponseDto>? watchlistsWithContent,
+    List<WatchlistResponseDto>? publicWatchlists,
+    WatchlistWithContentsDto? watchlistDetails,
   }) {
     return WatchlistLoaded(
       watchlists: watchlists ?? this.watchlists,
       currentOperation: currentOperation ?? this.currentOperation,
       watchlistsWithContent: watchlistsWithContent ?? this.watchlistsWithContent,
+      publicWatchlists: publicWatchlists ?? this.publicWatchlists,
+      watchlistDetails: watchlistDetails ?? this.watchlistDetails,
     );
   }
 
@@ -62,6 +71,8 @@ class WatchlistLoaded extends WatchlistState {
       watchlists: watchlists,
       currentOperation: null,
       watchlistsWithContent: watchlistsWithContent,
+      publicWatchlists: publicWatchlists,
+      watchlistDetails: watchlistDetails,
     );
   }
 
@@ -75,6 +86,8 @@ class WatchlistLoaded extends WatchlistState {
       watchlists: updatedList,
       currentOperation: currentOperation,
       watchlistsWithContent: watchlistsWithContent,
+      publicWatchlists: publicWatchlists,
+      watchlistDetails: watchlistDetails,
     );
   }
 
@@ -84,6 +97,8 @@ class WatchlistLoaded extends WatchlistState {
       watchlists: [...watchlists, newWatchlist],
       currentOperation: currentOperation,
       watchlistsWithContent: watchlistsWithContent,
+      publicWatchlists: publicWatchlists,
+      watchlistDetails: watchlistDetails,
     );
   }
 
@@ -95,6 +110,8 @@ class WatchlistLoaded extends WatchlistState {
       watchlists: updatedList,
       currentOperation: currentOperation,
       watchlistsWithContent: watchlistsWithContent,
+      publicWatchlists: publicWatchlists,
+      watchlistDetails: watchlistDetails,
     );
   }
 }

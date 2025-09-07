@@ -14,10 +14,14 @@ import '../screens/profile_update_screen.dart';
 import '../pages/manage_contents_page.dart';
 import '../pages/watchlists_page.dart';
 import '../bloc/watchlist/watchlist_bloc.dart';
+import '../bloc/watchlist/watchlist_event.dart';
+import '../bloc/watchlist/watchlist_state.dart';
 import '../services/watchlist_service.dart';
 import '../dto/response/user_response_dto.dart';
 import '../dto/response/member_response_dto.dart';
 import '../dto/response/production_company_response_dto.dart';
+import '../dto/response/watchlist_response_dto.dart';
+import '../pages/watchlist_detail_page.dart';
 import '../model/location.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -50,6 +54,11 @@ class ProfilePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 32),
                   _buildAuthenticatedProfile(context, user: viewingUser),
+                  // Show public watchlists as a separate card if the user is a member
+                  if (viewingUser is MemberResponseDto) ...[
+                    const SizedBox(height: 24),
+                    _buildPublicWatchlistsSection(context, viewingUser as MemberResponseDto),
+                  ],
                 ],
               ),
             ),
@@ -620,6 +629,165 @@ class ProfilePage extends StatelessWidget {
               description: 'Track what you\'ve watched and rated',
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPublicWatchlistsSection(BuildContext context, MemberResponseDto member) {
+    return BlocProvider(
+      create: (context) => WatchlistBloc(
+        watchlistService: getIt<WatchlistService>(),
+      )..add(LoadPublicWatchlistsByMemberId(memberId: member.id)),
+      child: BlocBuilder<WatchlistBloc, WatchlistState>(
+        builder: (context, state) {
+          return Card(
+            elevation: 4,
+            shadowColor: Colors.black26,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.playlist_play,
+                        color: Theme.of(context).primaryColor,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Public Watchlists',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildPublicWatchlistsContent(context, state),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildPublicWatchlistsContent(BuildContext context, WatchlistState state) {
+    if (state is WatchlistLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (state is WatchlistLoaded) {
+      final publicWatchlists = state.publicWatchlists ?? [];
+      
+      if (publicWatchlists.isEmpty) {
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.playlist_remove,
+                  size: 48,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'No public watchlists',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      return Column(
+        children: publicWatchlists.map((watchlist) => _buildWatchlistTile(context, watchlist)).toList(),
+      );
+    }
+
+    if (state is WatchlistError) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: Colors.red[400],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Failed to load watchlists',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.red[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildWatchlistTile(BuildContext context, WatchlistResponseDto watchlist) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8.0),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => WatchlistDetailPage(
+                watchlistId: watchlist.id,
+                watchlistName: watchlist.name,
+              ),
+            ),
+          );
+        },
+        leading: Icon(
+          Icons.playlist_play,
+          color: Theme.of(context).primaryColor,
+        ),
+        title: Text(
+          watchlist.name,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: Text(
+          watchlist.isPublic ? 'Public' : 'Private',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Colors.grey[600],
+          ),
+        ),
+        trailing: Icon(
+          Icons.arrow_forward_ios,
+          color: Colors.grey[600],
+          size: 16,
         ),
       ),
     );
