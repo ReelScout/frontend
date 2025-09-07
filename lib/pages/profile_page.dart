@@ -21,10 +21,44 @@ import '../dto/response/production_company_response_dto.dart';
 import '../model/location.dart';
 
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+  final UserResponseDto? viewingUser; // Optional user to view (if null, shows current user's profile)
+  
+  const ProfilePage({super.key, this.viewingUser});
 
   @override
   Widget build(BuildContext context) {
+    // If viewing another user's profile, show it with the same layout but without action buttons
+    if (viewingUser != null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(viewingUser!.username),
+          backgroundColor: Theme.of(context).primaryColor,
+          foregroundColor: Colors.white,
+        ),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  Text(
+                    '',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  _buildAuthenticatedProfile(context, user: viewingUser),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Original logic for current user's profile
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, authState) {
         if (authState is AuthSuccess) {
@@ -65,7 +99,65 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildAuthenticatedProfile(BuildContext context) {
+  Widget _buildAuthenticatedProfile(BuildContext context, {UserResponseDto? user}) {
+    // If a specific user is provided (viewing another user), use that user's data
+    if (user != null) {
+      return Card(
+        elevation: 4,
+        shadowColor: Colors.black26,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            children: [
+              ProfileAvatar(
+                size: 80,
+                base64Image: user.base64Image,
+                fallbackColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                fallbackIconColor: Theme.of(context).primaryColor,
+              ),
+              const SizedBox(height: 16),
+              
+              Text(
+                user.username,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                user.email,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  user.role.name.toUpperCase(),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).primaryColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildMoreProfileInfo(context, user),
+              // No action buttons when viewing another user's profile
+            ],
+          ),
+        ),
+      );
+    }
+    
+    // Original implementation for current user with action buttons
     return BlocBuilder<UserProfileBloc, UserProfileState>(
       builder: (context, userProfileState) {
         return Card(
@@ -532,6 +624,7 @@ class ProfilePage extends StatelessWidget {
       ),
     );
   }
+
 }
 
 class FeatureItem extends StatelessWidget {

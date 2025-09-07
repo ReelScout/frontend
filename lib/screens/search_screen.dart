@@ -11,7 +11,7 @@ import '../bloc/search/search_bloc.dart';
 import '../bloc/search/search_event.dart';
 import '../bloc/search/search_state.dart';
 import '../pages/content_detail_page.dart';
-import '../pages/user_detail_page.dart';
+import '../pages/profile_page.dart';
 
 class SearchScreen extends HookWidget {
   const SearchScreen({super.key});
@@ -329,7 +329,7 @@ class SearchScreen extends HookWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => UserDetailPage(user: user),
+              builder: (context) => ProfilePage(viewingUser: user),
             ),
           );
         },
