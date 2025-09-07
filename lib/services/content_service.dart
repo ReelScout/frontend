@@ -1,9 +1,9 @@
 import 'package:retrofit/retrofit.dart';
 import 'package:dio/dio.dart';
 
-import '../dto/request/content_request_dto.dart';
-import '../dto/response/content_response_dto.dart';
-import '../dto/response/custom_response_dto.dart';
+import 'package:frontend/dto/request/content_request_dto.dart';
+import 'package:frontend/dto/response/content_response_dto.dart';
+import 'package:frontend/dto/response/custom_response_dto.dart';
 
 part 'generated/content_service.g.dart';
 

@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
-
-import '../dto/response/search_response_dto.dart';
+import 'package:frontend/dto/response/search_response_dto.dart';
 
 part 'generated/search_service.g.dart';
 

@@ -1,14 +1,17 @@
+import 'package:frontend/utils/base64_image_cache.dart';
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../screens/login_screen.dart';
-import '../bloc/auth/auth_bloc.dart';
-import '../bloc/auth/auth_state.dart';
-import '../bloc/content/content_bloc.dart';
-import '../bloc/content/content_event.dart';
-import '../bloc/content/content_state.dart';
-import '../styles/app_colors.dart';
-import 'content_detail_page.dart';
-import 'dart:convert';
+import 'package:frontend/bloc/auth/auth_bloc.dart';
+import 'package:frontend/bloc/auth/auth_state.dart';
+import 'package:frontend/bloc/content/content_bloc.dart';
+import 'package:frontend/bloc/content/content_event.dart';
+import 'package:frontend/bloc/content/content_state.dart';
+import 'package:frontend/bloc/navigation/navigation_bloc.dart';
+import 'package:frontend/bloc/navigation/navigation_state.dart';
+import 'package:frontend/screens/login_screen.dart';
+import 'package:frontend/styles/app_colors.dart';
+import 'package:frontend/pages/content_detail_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,49 +20,23 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
+class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
-  bool _isVisible = true;
   String? _selectedGenre;
   String? _selectedContentType;
   List<String> _genres = [];
   List<String> _contentTypes = [];
+  int? _lastNavIndex;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     // Load content, genres, and content types when page initializes
-    context.read<ContentBloc>().add(LoadContentRequested());
-    context.read<ContentBloc>().add(LoadGenresRequested());
-    context.read<ContentBloc>().add(LoadContentTypesRequested());
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Check if this page is now visible (for IndexedStack navigation)
-    final ModalRoute? route = ModalRoute.of(context);
-    if (route != null && route.isCurrent && !_isVisible) {
-      _isVisible = true;
-      // Refresh content when returning to this page
-      if (mounted) {
-        context.read<ContentBloc>().add(LoadContentRequested(
-          genreFilter: _selectedGenre,
-          contentTypeFilter: _selectedContentType,
-        ));
-      }
-    } else if (route == null || !route.isCurrent) {
-      _isVisible = false;
-    }
+    context.read<ContentBloc>().add(const LoadContentRequested());
+    context.read<ContentBloc>().add(const LoadGenresRequested());
+    context.read<ContentBloc>().add(const LoadContentTypesRequested());
   }
 
   void _applyFilters() {
@@ -73,26 +50,44 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
     return SafeArea(
-      child: BlocListener<ContentBloc, ContentState>(
-        listener: (context, state) {
-          if (state is GenresLoaded) {
-            setState(() {
-              _genres = state.genres;
-            });
-          } else if (state is ContentTypesLoaded) {
-            setState(() {
-              _contentTypes = state.contentTypes;
-            });
-          }
-        },
+      child: MultiBlocListener(
+        listeners: [
+          BlocListener<ContentBloc, ContentState>(
+            listener: (context, state) {
+              if (state is GenresLoaded) {
+                setState(() {
+                  _genres = state.genres;
+                });
+              } else if (state is ContentTypesLoaded) {
+                setState(() {
+                  _contentTypes = state.contentTypes;
+                });
+              }
+            },
+          ),
+          // Refresh content when returning to Home tab (index 0)
+          BlocListener<NavigationBloc, NavigationState>(
+            listener: (context, navState) {
+              if (_lastNavIndex != navState.selectedIndex) {
+                _lastNavIndex = navState.selectedIndex;
+                if (navState.selectedIndex == 0) {
+                  context.read<ContentBloc>().add(LoadContentRequested(
+                        genreFilter: _selectedGenre,
+                        contentTypeFilter: _selectedContentType,
+                      ));
+                }
+              }
+            },
+          ),
+        ],
         child: RefreshIndicator(
           onRefresh: () async {
             context.read<ContentBloc>().add(LoadContentRequested(
               genreFilter: _selectedGenre,
               contentTypeFilter: _selectedContentType,
             ));
-            context.read<ContentBloc>().add(LoadGenresRequested());
-            context.read<ContentBloc>().add(LoadContentTypesRequested());
+            context.read<ContentBloc>().add(const LoadGenresRequested());
+            context.read<ContentBloc>().add(const LoadContentTypesRequested());
           },
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
@@ -144,7 +139,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
+                            MaterialPageRoute<void>(
                               builder: (context) => const LoginScreen(),
                             ),
                           );
@@ -238,7 +233,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              DropdownButtonFormField<String>(
+                              DropdownButtonFormField<String?>(
                                 initialValue: _selectedGenre,
                                 decoration: InputDecoration(
                                   hintText: 'All genres',
@@ -248,11 +243,11 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 ),
                                 items: [
-                                  const DropdownMenuItem<String>(
+                                  const DropdownMenuItem<String?>(
                                     value: null,
                                     child: Text('All genres'),
                                   ),
-                                  ..._genres.map((genre) => DropdownMenuItem<String>(
+                                  ..._genres.map((genre) => DropdownMenuItem<String?>(
                                     value: genre,
                                     child: Text(genre),
                                   )),
@@ -280,7 +275,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              DropdownButtonFormField<String>(
+                              DropdownButtonFormField<String?>(
                                 initialValue: _selectedContentType,
                                 decoration: InputDecoration(
                                   hintText: 'All types',
@@ -290,11 +285,11 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 ),
                                 items: [
-                                  const DropdownMenuItem<String>(
+                                  const DropdownMenuItem<String?>(
                                     value: null,
                                     child: Text('All types'),
                                   ),
-                                  ..._contentTypes.map((type) => DropdownMenuItem<String>(
+                                  ..._contentTypes.map((type) => DropdownMenuItem<String?>(
                                     value: type,
                                     child: Text(type),
                                   )),
@@ -448,7 +443,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
+                            MaterialPageRoute<void>(
                               builder: (context) => ContentDetailPage(content: content),
                             ),
                           );
@@ -478,7 +473,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
                                             top: Radius.circular(12),
                                           ),
                                           child: Image.memory(
-                                            base64Decode(content.base64Image!),
+                                            decodeBase64Cached(content.base64Image!) ?? Uint8List(0),
                                             fit: BoxFit.cover,
                                             errorBuilder: (context, error, stackTrace) {
                                               return const Icon(

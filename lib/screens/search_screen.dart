@@ -1,17 +1,19 @@
-import 'dart:convert';
+// no-op
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import '../dto/response/content_response_dto.dart';
-import '../dto/response/user_response_dto.dart';
-import '../services/search_service.dart';
-import '../bloc/search/search_bloc.dart';
-import '../bloc/search/search_event.dart';
-import '../bloc/search/search_state.dart';
-import '../pages/content_detail_page.dart';
-import '../pages/profile_page.dart';
+import 'package:frontend/bloc/search/search_bloc.dart';
+import 'package:frontend/bloc/search/search_event.dart';
+import 'package:frontend/bloc/search/search_state.dart';
+import 'package:frontend/dto/response/content_response_dto.dart';
+import 'package:frontend/dto/response/search_response_dto.dart';
+import 'package:frontend/dto/response/user_response_dto.dart';
+import 'package:frontend/pages/content_detail_page.dart';
+import 'package:frontend/pages/profile_page.dart';
+import 'package:frontend/services/search_service.dart';
+import 'package:frontend/utils/base64_image_cache.dart';
 
 class SearchScreen extends HookWidget {
   const SearchScreen({super.key});
@@ -254,7 +256,7 @@ class SearchScreen extends HookWidget {
     );
   }
 
-  Widget _buildResultsList(BuildContext context, dynamic results) {
+  Widget _buildResultsList(BuildContext context, SearchResponseDto results) {
     final hasContents = results.contents.isNotEmpty;
     final hasUsers = results.users.isNotEmpty;
 
@@ -293,14 +295,14 @@ class SearchScreen extends HookWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
+            MaterialPageRoute<void>(
               builder: (context) => ContentDetailPage(content: content),
             ),
           );
         },
         leading: _buildSafeAvatar(
                 base64Image: content.base64Image,
-                fallback: Icon(Icons.tv)
+                fallback: const Icon(Icons.tv)
         ),
         title: Text(content.title),
         subtitle: Column(
@@ -328,7 +330,7 @@ class SearchScreen extends HookWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
+            MaterialPageRoute<void>(
               builder: (context) => ProfilePage(viewingUser: user),
             ),
           );
@@ -350,14 +352,10 @@ class SearchScreen extends HookWidget {
     required String? base64Image,
     required Widget fallback,
   }) {
-    try {
-      final decodedBytes = base64Decode(base64Image!);
-      return CircleAvatar(
-        backgroundImage: MemoryImage(decodedBytes),
-      );
-    } catch (e) {
-      // If base64 decoding fails, use the fallback widget
-      return CircleAvatar(child: fallback);
+    final bytes = decodeBase64Cached(base64Image);
+    if (bytes != null) {
+      return CircleAvatar(backgroundImage: MemoryImage(bytes));
     }
+    return CircleAvatar(child: fallback);
   }
 }

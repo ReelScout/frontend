@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'app_colors.dart';
+import 'package:frontend/styles/app_colors.dart';
 
 /// Application theme configuration
 /// This class provides centralized theme data for the entire application
@@ -14,7 +14,6 @@ class AppTheme {
       useMaterial3: true,
       
       // Color scheme
-      primarySwatch: Colors.blue,
       primaryColor: AppColors.primary,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
@@ -98,7 +97,7 @@ class AppTheme {
           ),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        hintStyle: TextStyle(color: AppColors.textHint),
+        hintStyle: const TextStyle(color: AppColors.textHint),
       ),
 
       // Card theme

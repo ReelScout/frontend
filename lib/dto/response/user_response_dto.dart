@@ -1,7 +1,7 @@
 import 'package:frontend/dto/response/entity_response_dto.dart';
 import 'package:frontend/dto/response/production_company_response_dto.dart';
-import '../../model/role.dart';
-import 'member_response_dto.dart';
+import 'package:frontend/model/role.dart';
+import 'package:frontend/dto/response/member_response_dto.dart';
 
 abstract class UserResponseDto extends EntityResponseDto {
   const UserResponseDto({

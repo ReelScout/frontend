@@ -1,10 +1,10 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
-import '../../services/watchlist_service.dart';
-import '../../dto/response/custom_response_dto.dart';
-import '../../dto/response/watchlist_response_dto.dart';
-import 'watchlist_event.dart';
-import 'watchlist_state.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend/dto/response/watchlist_response_dto.dart';
+import 'package:frontend/services/watchlist_service.dart';
+import 'package:frontend/utils/error_utils.dart';
+import 'package:frontend/bloc/watchlist/watchlist_event.dart';
+import 'package:frontend/bloc/watchlist/watchlist_state.dart';
 
 /// BLoC for managing watchlist operations with optimistic updates and comprehensive error handling
 class WatchlistBloc extends Bloc<WatchlistEvent, WatchlistState> {
@@ -38,18 +38,8 @@ class WatchlistBloc extends Bloc<WatchlistEvent, WatchlistState> {
       final watchlists = await _watchlistService.getMyWatchlists();
       emit(WatchlistLoaded(watchlists: watchlists));
     } catch (e) {
-      String errorMessage = 'Failed to load watchlists, make sure you are logged in';
-      if (e is DioException && e.response?.data != null) {
-        try {
-          final customResponse = CustomResponseDto.fromJson(e.response!.data);
-          if (customResponse.message.isNotEmpty) {
-            errorMessage = customResponse.message;
-          }
-        } catch (_) {
-          // Use fallback message
-        }
-      }
-      emit(WatchlistError(message: errorMessage));
+      final msg = e is DioException ? mapDioError(e) : kGenericErrorMessage;
+      emit(WatchlistError(message: msg));
     }
   }
 
@@ -116,19 +106,8 @@ class WatchlistBloc extends Bloc<WatchlistEvent, WatchlistState> {
         ));
       }
     } catch (e) {
-      String errorMessage = 'Failed to create watchlist';
-      if (e is DioException && e.response?.data != null) {
-        try {
-          final customResponse = CustomResponseDto.fromJson(e.response!.data);
-          if (customResponse.message.isNotEmpty) {
-            errorMessage = customResponse.message;
-          }
-        } catch (_) {
-          // Use fallback message
-        }
-      }
+      final errorMessage = e is DioException ? mapDioError(e) : kGenericErrorMessage;
 
-      // Show error
       if (state is WatchlistLoaded) {
         emit((state as WatchlistLoaded).copyWith(
           currentOperation: WatchlistOperation.error(
@@ -209,19 +188,8 @@ class WatchlistBloc extends Bloc<WatchlistEvent, WatchlistState> {
             ));
       }
     } catch (e) {
-      String errorMessage = 'Failed to update watchlist';
-      if (e is DioException && e.response?.data != null) {
-        try {
-          final customResponse = CustomResponseDto.fromJson(e.response!.data);
-          if (customResponse.message.isNotEmpty) {
-            errorMessage = customResponse.message;
-          }
-        } catch (_) {
-          // Use fallback message
-        }
-      }
+      final errorMessage = e is DioException ? mapDioError(e) : kGenericErrorMessage;
 
-      // Show error
       if (state is WatchlistLoaded) {
         emit((state as WatchlistLoaded).copyWith(
           currentOperation: WatchlistOperation.error(
@@ -284,19 +252,8 @@ class WatchlistBloc extends Bloc<WatchlistEvent, WatchlistState> {
             ));
       }
     } catch (e) {
-      String errorMessage = 'Failed to delete watchlist';
-      if (e is DioException && e.response?.data != null) {
-        try {
-          final customResponse = CustomResponseDto.fromJson(e.response!.data);
-          if (customResponse.message.isNotEmpty) {
-            errorMessage = customResponse.message;
-          }
-        } catch (_) {
-          // Use fallback message
-        }
-      }
+      final errorMessage = e is DioException ? mapDioError(e) : kGenericErrorMessage;
 
-      // Show error
       if (state is WatchlistLoaded) {
         emit((state as WatchlistLoaded).copyWith(
           currentOperation: WatchlistOperation.error(
@@ -383,7 +340,17 @@ class WatchlistBloc extends Bloc<WatchlistEvent, WatchlistState> {
         ));
       }
     } catch (e) {
-      // Error handling code remains the same
+      final msg = e is DioException ? mapDioError(e) : kGenericErrorMessage;
+      if (state is WatchlistLoaded) {
+        emit((state as WatchlistLoaded).copyWith(
+          currentOperation: WatchlistOperation.error(
+            type: WatchlistOperationType.addContent,
+            watchlistId: event.watchlistId,
+            watchlistName: watchlist.name,
+            message: msg,
+          ),
+        ));
+      }
     }
   }
 
@@ -430,7 +397,17 @@ class WatchlistBloc extends Bloc<WatchlistEvent, WatchlistState> {
         ));
       }
     } catch (e) {
-      // Error handling code remains the same
+      final msg = e is DioException ? mapDioError(e) : kGenericErrorMessage;
+      if (state is WatchlistLoaded) {
+        emit((state as WatchlistLoaded).copyWith(
+          currentOperation: WatchlistOperation.error(
+            type: WatchlistOperationType.removeContent,
+            watchlistId: event.watchlistId,
+            watchlistName: watchlist.name,
+            message: msg,
+          ),
+        ));
+      }
     }
   }
 
@@ -511,19 +488,8 @@ class WatchlistBloc extends Bloc<WatchlistEvent, WatchlistState> {
         watchlistDetails: watchlistDetails,
       ));
     } catch (e) {
-      // If we can't load watchlist details, emit error or handle gracefully
-      String errorMessage = 'Failed to load watchlist details';
-      if (e is DioException && e.response?.data != null) {
-        try {
-          final customResponse = CustomResponseDto.fromJson(e.response!.data);
-          if (customResponse.message.isNotEmpty) {
-            errorMessage = customResponse.message;
-          }
-        } catch (_) {
-          // Use fallback message
-        }
-      }
-      emit(WatchlistError(message: errorMessage));
+      final msg = e is DioException ? mapDioError(e) : kGenericErrorMessage;
+      emit(WatchlistError(message: msg));
     }
   }
 

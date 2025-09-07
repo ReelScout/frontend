@@ -1,11 +1,11 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
-import '../../services/user_service.dart';
-import '../../services/token_service.dart';
-import '../../dto/response/custom_response_dto.dart';
-import '../../dto/response/user_response_dto.dart';
-import 'user_profile_event.dart';
-import 'user_profile_state.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend/dto/response/user_response_dto.dart';
+import 'package:frontend/services/token_service.dart';
+import 'package:frontend/services/user_service.dart';
+import 'package:frontend/utils/error_utils.dart';
+import 'package:frontend/bloc/user_profile/user_profile_event.dart';
+import 'package:frontend/bloc/user_profile/user_profile_state.dart';
 
 class UserProfileBloc extends Bloc<UserProfileEvent, UserProfileState> {
   UserProfileBloc({
@@ -32,20 +32,9 @@ class UserProfileBloc extends Bloc<UserProfileEvent, UserProfileState> {
       final user = await _userService.getCurrentUser();
       emit(UserProfileLoaded(user: user));
     } on DioException catch (e) {
-      String errorMessage = e.error?.toString() ?? 'Failed to load profile';
-      
-      if (e.response?.data != null) {
-        try {
-          final customResponse = CustomResponseDto.fromJson(e.response!.data);
-          errorMessage = customResponse.message;
-        } catch (_) {
-          errorMessage = e.error?.toString() ?? 'Failed to load profile';
-        }
-      }
-      
-      emit(UserProfileError(message: errorMessage));
-    } catch (e) {
-      emit(UserProfileError(message: 'An unexpected error occurred: $e'));
+      emit(UserProfileError(message: mapDioError(e)));
+    } catch (_) {
+      emit(const UserProfileError(message: kGenericErrorMessage));
     }
   }
 
@@ -72,8 +61,8 @@ class UserProfileBloc extends Bloc<UserProfileEvent, UserProfileState> {
       // If in error state, we need to reload user data first
       try {
         currentUser = await _userService.getCurrentUser();
-      } catch (e) {
-        emit(UserProfileError(message: 'Failed to get current user data'));
+      } catch (_) {
+        emit(const UserProfileError(message: kGenericErrorMessage));
         return;
       }
     }
@@ -92,25 +81,14 @@ class UserProfileBloc extends Bloc<UserProfileEvent, UserProfileState> {
         await _tokenService.saveToken(response.accessToken);
       }
 
-      emit(UserProfileUpdateSuccess(message: 'Profile updated'));
+      emit(const UserProfileUpdateSuccess(message: 'Profile updated'));
       
       // Reload the profile to get updated data
       add(LoadUserProfile());
     } on DioException catch (e) {
-      String errorMessage = e.error?.toString() ?? 'Failed to update profile';
-      
-      if (e.response?.data != null) {
-        try {
-          final customResponse = CustomResponseDto.fromJson(e.response!.data);
-          errorMessage = customResponse.message;
-        } catch (_) {
-          errorMessage = e.error?.toString() ?? 'Failed to update profile';
-        }
-      }
-      
-      emit(UserProfileError(message: errorMessage));
-    } catch (e) {
-      emit(UserProfileError(message: 'An unexpected error occurred: $e'));
+      emit(UserProfileError(message: mapDioError(e)));
+    } catch (_) {
+      emit(const UserProfileError(message: kGenericErrorMessage));
     }
   }
 }

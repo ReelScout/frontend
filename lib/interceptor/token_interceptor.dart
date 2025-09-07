@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
-import '../services/token_service.dart';
+import 'package:frontend/config/event_bus.dart';
+import 'package:frontend/services/token_service.dart';
 
 class TokenInterceptor extends Interceptor {
   final TokenService tokenService;
@@ -24,7 +25,19 @@ class TokenInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     // Handle authentication errors
     if (err.response?.statusCode == HttpStatus.unauthorized) {
+      final path = err.requestOptions.path;
+      final isAuthEndpoint =
+          path.contains('/auth') || path.endsWith('/login') || path.endsWith('/register');
+
+      // Do not override login/register responses; let UI show backend message
+      if (isAuthEndpoint) {
+        handler.next(err);
+        return;
+      }
+
       await tokenService.removeToken();
+      // Dispatch a global logout signal so app state can react
+      globalEventBus.emitLogout();
       // Transform error to standardized format
       final standardizedError = DioException(
         requestOptions: err.requestOptions,

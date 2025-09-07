@@ -1,6 +1,6 @@
-import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:frontend/utils/base64_image_cache.dart';
 
 class ProfileAvatar extends StatelessWidget {
   const ProfileAvatar({
@@ -31,26 +31,13 @@ class ProfileAvatar extends StatelessWidget {
 
   Widget _buildAvatarContent(BuildContext context) {
     if (base64Image != null && base64Image!.isNotEmpty) {
-      try {
-        // Remove data URL prefix if present (e.g., "data:image/jpeg;base64,")
-        String cleanBase64 = base64Image!;
-        if (cleanBase64.contains(',')) {
-          cleanBase64 = cleanBase64.split(',').last;
-        }
-        
-        final Uint8List imageBytes = base64Decode(cleanBase64);
-        
+      final Uint8List? imageBytes = decodeBase64Cached(base64Image);
+      if (imageBytes != null) {
         return Image.memory(
           imageBytes,
           fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            // Fallback to default icon if image fails to load
-            return _buildFallbackAvatar(context);
-          },
+          errorBuilder: (context, error, stackTrace) => _buildFallbackAvatar(context),
         );
-      } catch (e) {
-        // Fallback to default icon if base64 decoding fails
-        return _buildFallbackAvatar(context);
       }
     }
     

@@ -1,11 +1,10 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
-
-import '../../services/user_service.dart';
-import '../../dto/request/user_password_change_request_dto.dart';
-import '../../dto/response/custom_response_dto.dart';
-import 'password_change_event.dart';
-import 'password_change_state.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend/dto/request/user_password_change_request_dto.dart';
+import 'package:frontend/services/user_service.dart';
+import 'package:frontend/utils/error_utils.dart';
+import 'package:frontend/bloc/password_change/password_change_event.dart';
+import 'package:frontend/bloc/password_change/password_change_state.dart';
 
 class PasswordChangeBloc extends Bloc<PasswordChangeEvent, PasswordChangeState> {
   PasswordChangeBloc({required UserService userService})
@@ -33,20 +32,9 @@ class PasswordChangeBloc extends Bloc<PasswordChangeEvent, PasswordChangeState> 
       final response = await _userService.changePassword(request);
       emit(PasswordChangeSuccess(message: response.message));
     } on DioException catch (e) {
-      String errorMessage = e.error?.toString() ?? 'Failed to change password';
-
-      if (e.response?.data != null) {
-        try {
-          final customResponse = CustomResponseDto.fromJson(e.response!.data);
-          errorMessage = customResponse.message;
-        } catch (_) {
-          errorMessage = e.error?.toString() ?? 'Failed to change password';
-        }
-      }
-
-      emit(PasswordChangeFailure(error: errorMessage));
-    } catch (e) {
-      emit(PasswordChangeFailure(error: 'An unexpected error occurred: $e'));
+      emit(PasswordChangeFailure(error: mapDioError(e)));
+    } catch (_) {
+      emit(const PasswordChangeFailure(error: kGenericErrorMessage));
     }
   }
 

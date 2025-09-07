@@ -7,7 +7,8 @@ class TokenService {
 
   final FlutterSecureStorage secureStorage;
 
-  static const String _accessTokenKey = 'accessToken';
+  // Namespaced key to avoid collisions
+  static const String _accessTokenKey = 'rs_access_token';
 
   Future<String?> getToken() async {
     return await secureStorage.read(key: _accessTokenKey);

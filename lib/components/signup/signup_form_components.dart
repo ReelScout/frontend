@@ -1,8 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import '../../model/owner.dart';
-import '../../styles/app_colors.dart';
+import 'package:frontend/model/owner.dart';
+import 'package:frontend/styles/app_colors.dart';
+import 'package:frontend/utils/base64_image_cache.dart';
 
 // Shared input decoration function
 InputDecoration signupInputDecoration(String label, IconData icon) {
@@ -136,7 +136,9 @@ class ImagePickerRow extends StatelessWidget {
                 CircleAvatar(
                   radius: 50,
                   backgroundColor: AppColors.inputBackground,
-                  backgroundImage: pickedPath != null ? MemoryImage(base64Decode(pickedPath!)) : null,
+                  backgroundImage: pickedPath != null && decodeBase64Cached(pickedPath) != null
+                      ? MemoryImage(decodeBase64Cached(pickedPath)!)
+                      : null,
                   child: pickedPath == null ? const Icon(Icons.person, size: 50, color: Colors.grey) : null,
                 ),
                 // Overlay with camera icon when no image is selected

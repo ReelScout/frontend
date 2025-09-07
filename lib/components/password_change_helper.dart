@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'password_change_dialog.dart';
+import 'package:frontend/components/password_change_dialog.dart';
 
 /// Helper class to show the password change dialog
 class PasswordChangeHelper {

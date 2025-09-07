@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../dto/response/content_response_dto.dart';
+import 'package:frontend/dto/response/content_response_dto.dart';
 
 abstract class ContentState extends Equatable {
   const ContentState();

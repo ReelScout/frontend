@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend/bloc/content/content_bloc.dart';
+import 'package:frontend/bloc/navigation/navigation_bloc.dart';
 import 'package:frontend/bloc/search/search_bloc.dart';
+import 'package:frontend/bloc/user_profile/user_profile_bloc.dart';
 import 'package:frontend/bloc/watchlist/watchlist_bloc.dart';
+import 'package:frontend/config/event_bus.dart';
 import 'package:frontend/config/injection_container.dart';
+import 'package:frontend/screens/home_screen.dart';
+import 'package:frontend/services/auth_service.dart';
+import 'package:frontend/services/content_service.dart';
 import 'package:frontend/services/search_service.dart';
+import 'package:frontend/services/token_service.dart';
+import 'package:frontend/services/user_service.dart';
 import 'package:frontend/services/watchlist_service.dart';
-import 'screens/home_screen.dart';
-import 'bloc/auth/auth_bloc.dart';
-import 'bloc/auth/auth_event.dart';
-import 'bloc/navigation/navigation_bloc.dart';
-import 'bloc/user_profile/user_profile_bloc.dart';
-import 'bloc/content/content_bloc.dart';
-import 'services/auth_service.dart';
-import 'services/token_service.dart';
-import 'services/user_service.dart';
-import 'services/content_service.dart';
-import 'styles/app_theme.dart';
+import 'package:frontend/styles/app_theme.dart';
+import 'package:frontend/bloc/auth/auth_bloc.dart';
+import 'package:frontend/bloc/auth/auth_event.dart';
 
 void main() {
   configureDependencies();
@@ -30,10 +31,18 @@ class ReelScoutApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider<AuthBloc>(
-          create: (context) => AuthBloc(
-            authService: getIt<AuthService>(),
-            tokenService: getIt<TokenService>(),
-          )..add(AuthCheckRequested()),
+          create: (context) {
+            final bloc = AuthBloc(
+              authService: getIt<AuthService>(),
+              tokenService: getIt<TokenService>(),
+            );
+            // Listen for global logout signals and route through the bloc
+            globalEventBus.onLogout.listen((_) {
+              bloc.add(LogoutRequested());
+            });
+            bloc.add(AuthCheckRequested());
+            return bloc;
+          },
         ),
         BlocProvider<UserProfileBloc>(
           create: (context) => UserProfileBloc(

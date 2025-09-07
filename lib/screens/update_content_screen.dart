@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
-import '../bloc/content/content_bloc.dart';
-import '../bloc/content/content_event.dart';
-import '../bloc/content/content_state.dart';
-import '../components/content/content_form_wrapper.dart';
-import '../dto/request/content_request_dto.dart';
-import '../dto/response/content_response_dto.dart';
-import '../styles/app_colors.dart';
+import 'package:frontend/bloc/content/content_bloc.dart';
+import 'package:frontend/bloc/content/content_event.dart';
+import 'package:frontend/bloc/content/content_state.dart';
+import 'package:frontend/components/content/content_form_wrapper.dart';
+import 'package:frontend/dto/request/content_request_dto.dart';
+import 'package:frontend/dto/response/content_response_dto.dart';
+import 'package:frontend/styles/app_colors.dart';
 
 class UpdateContentScreen extends HookWidget {
   const UpdateContentScreen({

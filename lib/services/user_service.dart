@@ -3,9 +3,9 @@ import 'package:frontend/dto/response/custom_response_dto.dart';
 import 'package:frontend/dto/response/user_login_response_dto.dart';
 import 'package:retrofit/retrofit.dart';
 
-import '../dto/request/user_request_dto.dart';
-import '../dto/response/user_response_dto.dart';
-import '../dto/request/user_password_change_request_dto.dart';
+import 'package:frontend/dto/request/user_password_change_request_dto.dart';
+import 'package:frontend/dto/request/user_request_dto.dart';
+import 'package:frontend/dto/response/user_response_dto.dart';
 
 part 'generated/user_service.g.dart';
 

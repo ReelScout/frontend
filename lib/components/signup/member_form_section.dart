@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:frontend/components/content/genres_section.dart';
-import 'signup_form_components.dart';
+import 'package:frontend/components/signup/signup_form_components.dart';
 
 class MemberFormSection extends HookWidget {
   const MemberFormSection({

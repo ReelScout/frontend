@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../dto/response/user_response_dto.dart';
+import 'package:frontend/dto/response/user_response_dto.dart';
 
 abstract class UserProfileState extends Equatable {
   const UserProfileState();

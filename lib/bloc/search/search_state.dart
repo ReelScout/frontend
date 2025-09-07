@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../dto/response/search_response_dto.dart';
+import 'package:frontend/dto/response/search_response_dto.dart';
 
 abstract class SearchState extends Equatable {
   const SearchState();

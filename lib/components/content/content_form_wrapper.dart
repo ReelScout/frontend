@@ -5,15 +5,17 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../bloc/content/content_bloc.dart';
-import '../../bloc/content/content_event.dart';
-import '../../bloc/content/content_state.dart';
-import '../../dto/request/content_request_dto.dart';
-import '../../dto/response/content_response_dto.dart';
-import '../../model/actor.dart';
-import '../../model/director.dart';
-import '../../styles/app_colors.dart';
-import 'genres_section.dart';
+import 'package:frontend/bloc/content/content_bloc.dart';
+import 'package:frontend/bloc/content/content_event.dart';
+import 'package:frontend/bloc/content/content_state.dart';
+import 'package:frontend/dto/request/content_request_dto.dart';
+import 'package:frontend/utils/base64_image_cache.dart';
+import 'dart:typed_data';
+import 'package:frontend/dto/response/content_response_dto.dart';
+import 'package:frontend/model/actor.dart';
+import 'package:frontend/model/director.dart';
+import 'package:frontend/styles/app_colors.dart';
+import 'package:frontend/components/content/genres_section.dart';
 
 class ContentFormWrapper extends HookWidget {
   const ContentFormWrapper({
@@ -27,7 +29,7 @@ class ContentFormWrapper extends HookWidget {
 
   final String title;
   final String submitButtonText;
-  final Function(ContentRequestDto request) onSubmit;
+  final void Function(ContentRequestDto request) onSubmit;
   final bool isLoading;
   final ContentResponseDto? initialContent;
 
@@ -380,24 +382,30 @@ class ContentFormWrapper extends HookWidget {
                 const SizedBox(height: 24),
 
                 // Actors Section
-                _buildPersonSection(
+                _buildPersonSection<Actor>(
                   context,
                   'Actors *',
                   actors.value,
                   addActor,
                   removeActor,
                   updateActor,
+                  (a) => a.id,
+                  (a) => a.firstName,
+                  (a) => a.lastName,
                 ),
                 const SizedBox(height: 24),
 
                 // Directors Section
-                _buildPersonSection(
+                _buildPersonSection<Director>(
                   context,
                   'Directors *',
                   directors.value,
                   addDirector,
                   removeDirector,
                   updateDirector,
+                  (d) => d.id,
+                  (d) => d.firstName,
+                  (d) => d.lastName,
                 ),
                 const SizedBox(height: 24),
 
@@ -454,13 +462,16 @@ class ContentFormWrapper extends HookWidget {
     );
   }
 
-  Widget _buildPersonSection(
+  Widget _buildPersonSection<T>(
     BuildContext context,
     String title,
-    List<dynamic> people,
+    List<T> people,
     VoidCallback onAdd,
-    Function(String) onRemove,
-    Function(int, String, String) onUpdate,
+    void Function(String) onRemove,
+    void Function(int, String, String) onUpdate,
+    String Function(T) idOf,
+    String Function(T) firstNameOf,
+    String Function(T) lastNameOf,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -486,7 +497,7 @@ class ContentFormWrapper extends HookWidget {
         ...people.asMap().entries.map((entry) {
           final index = entry.key;
           final person = entry.value;
-          final personId = person is Actor ? person.id : (person is Director ? person.id : '');
+          final personId = idOf(person);
           return Padding(
             key: ValueKey(personId),
             padding: const EdgeInsets.only(bottom: 12),
@@ -494,26 +505,26 @@ class ContentFormWrapper extends HookWidget {
               children: [
                 Expanded(
                   child: TextFormField(
-                    initialValue: person.firstName,
+                    initialValue: firstNameOf(person),
                     decoration: const InputDecoration(
                       labelText: 'First Name',
                       border: OutlineInputBorder(),
                     ),
                     onChanged: (value) {
-                      onUpdate(index, value, person.lastName);
+                      onUpdate(index, value, lastNameOf(person));
                     },
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextFormField(
-                    initialValue: person.lastName,
+                    initialValue: lastNameOf(person),
                     decoration: const InputDecoration(
                       labelText: 'Last Name',
                       border: OutlineInputBorder(),
                     ),
                     onChanged: (value) {
-                      onUpdate(index, person.firstName, value);
+                      onUpdate(index, firstNameOf(person), value);
                     },
                   ),
                 ),
@@ -557,7 +568,7 @@ class ContentFormWrapper extends HookWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.memory(
-                base64Decode(base64Image),
+                decodeBase64Cached(base64Image) ?? Uint8List(0),
                 fit: BoxFit.cover,
               ),
             ),

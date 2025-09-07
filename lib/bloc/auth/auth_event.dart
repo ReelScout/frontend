@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
+import 'package:frontend/dto/request/user_login_request_dto.dart';
 import 'package:frontend/dto/request/user_request_dto.dart';
-import '../../dto/request/user_login_request_dto.dart';
 
 abstract class AuthEvent extends Equatable {
   const AuthEvent();

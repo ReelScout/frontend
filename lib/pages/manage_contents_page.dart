@@ -1,14 +1,13 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import '../screens/add_content_screen.dart';
-import '../screens/update_content_screen.dart';
-import '../bloc/content/content_bloc.dart';
-import '../bloc/content/content_event.dart';
-import '../bloc/content/content_state.dart';
-import '../dto/response/content_response_dto.dart';
+import 'package:frontend/bloc/content/content_bloc.dart';
+import 'package:frontend/bloc/content/content_event.dart';
+import 'package:frontend/bloc/content/content_state.dart';
+import 'package:frontend/dto/response/content_response_dto.dart';
+import 'package:frontend/screens/add_content_screen.dart';
+import 'package:frontend/screens/update_content_screen.dart';
+import 'package:frontend/utils/base64_image_cache.dart';
 
 class ManageContentsPage extends HookWidget {
   const ManageContentsPage({super.key});
@@ -168,7 +167,7 @@ class ManageContentsPage extends HookWidget {
         onPressed: () async {
           await Navigator.push(
             context,
-            MaterialPageRoute(
+            MaterialPageRoute<void>(
               builder: (context) => const AddContentScreen(),
             ),
           );
@@ -280,20 +279,15 @@ class ManageContentsPage extends HookWidget {
   }
 
   Widget _buildSafeImage(String base64Image) {
-    try {
-      final bytes = base64Decode(base64Image);
-      return Image.memory(
-        bytes,
-        fit: BoxFit.cover,
-      );
-    } catch (e) {
-      // Any parsing or decoding error - return fallback icon
-      return const Icon(
-        Icons.movie,
-        size: 40,
-        color: Colors.grey,
-      );
+    final bytes = decodeBase64Cached(base64Image);
+    if (bytes != null) {
+      return Image.memory(bytes, fit: BoxFit.cover);
     }
+    return const Icon(
+      Icons.movie,
+      size: 40,
+      color: Colors.grey,
+    );
   }
 
   void _handleEditContent(BuildContext context, ContentResponseDto content) async {
@@ -301,7 +295,7 @@ class ManageContentsPage extends HookWidget {
     
     await Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (context) => UpdateContentScreen(content: content),
       ),
     );
@@ -311,7 +305,7 @@ class ManageContentsPage extends HookWidget {
   }
 
   void _handleDeleteContent(BuildContext context, ContentResponseDto content) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (BuildContext dialogContext) {
         return BlocConsumer<ContentBloc, ContentState>(

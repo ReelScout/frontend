@@ -2,11 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import '../bloc/watchlist/watchlist_bloc.dart';
-import '../bloc/watchlist/watchlist_event.dart';
-import '../bloc/watchlist/watchlist_state.dart';
-import '../components/watchlist_card.dart';
-import '../components/watchlist_dialog.dart';
+import 'package:frontend/bloc/watchlist/watchlist_bloc.dart';
+import 'package:frontend/bloc/watchlist/watchlist_event.dart';
+import 'package:frontend/bloc/watchlist/watchlist_state.dart';
+import 'package:frontend/components/watchlist_card.dart';
+import 'package:frontend/components/watchlist_dialog.dart';
+import 'package:frontend/dto/response/watchlist_response_dto.dart';
 
 class WatchlistsPage extends HookWidget {
   const WatchlistsPage({super.key});
@@ -177,7 +178,7 @@ class WatchlistsPage extends HookWidget {
                 });
                 
                 await completer.future;
-                subscription.cancel();
+                await subscription.cancel();
               },
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -269,7 +270,7 @@ class WatchlistsPage extends HookWidget {
     );
   }
 
-  void _showEditDialog(BuildContext context, watchlist) {
+  void _showEditDialog(BuildContext context, WatchlistResponseDto watchlist) {
     showDialog<bool>(
       context: context,
       barrierDismissible: false, // Prevent dismissal during loading
@@ -280,8 +281,8 @@ class WatchlistsPage extends HookWidget {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, watchlist) {
-    showDialog(
+  void _showDeleteConfirmation(BuildContext context, WatchlistResponseDto watchlist) {
+    showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Row(

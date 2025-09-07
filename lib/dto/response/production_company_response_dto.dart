@@ -2,8 +2,8 @@ import 'package:frontend/dto/response/user_response_dto.dart';
 import 'package:frontend/model/role.dart';
 import 'package:json_annotation/json_annotation.dart';
 
-import '../../model/location.dart';
-import '../../model/owner.dart';
+import 'package:frontend/model/location.dart';
+import 'package:frontend/model/owner.dart';
 
 part '../generated/response/production_company_response_dto.g.dart';
 

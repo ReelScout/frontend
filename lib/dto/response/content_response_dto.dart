@@ -1,7 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
-import '../../model/actor.dart';
-import '../../model/director.dart';
+import 'package:frontend/model/actor.dart';
+import 'package:frontend/model/director.dart';
 
 part '../generated/response/content_response_dto.g.dart';
 

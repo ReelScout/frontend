@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../config/injection_container.dart';
-import '../bloc/watchlist/watchlist_bloc.dart';
-import '../bloc/watchlist/watchlist_event.dart';
-import '../bloc/watchlist/watchlist_state.dart';
-import '../services/watchlist_service.dart';
-import '../dto/response/content_response_dto.dart';
-import '../pages/content_detail_page.dart';
-import 'dart:convert';
+import 'package:frontend/bloc/watchlist/watchlist_bloc.dart';
+import 'package:frontend/bloc/watchlist/watchlist_event.dart';
+import 'package:frontend/bloc/watchlist/watchlist_state.dart';
+import 'package:frontend/config/injection_container.dart';
+import 'package:frontend/dto/response/content_response_dto.dart';
+import 'package:frontend/pages/content_detail_page.dart';
+import 'package:frontend/dto/response/watchlist_with_contents_response_dto.dart';
+import 'package:frontend/services/watchlist_service.dart';
+import 'package:frontend/utils/base64_image_cache.dart';
 
 class WatchlistDetailPage extends StatelessWidget {
   final int watchlistId;
@@ -110,7 +111,7 @@ class WatchlistDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildWatchlistContent(BuildContext context, watchlistDetails) {
+  Widget _buildWatchlistContent(BuildContext context, WatchlistWithContentsDto watchlistDetails) {
     final contents = watchlistDetails.contents;
 
     return Column(
@@ -189,7 +190,7 @@ class WatchlistDetailPage extends StatelessWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
+            MaterialPageRoute<void>(
               builder: (context) => ContentDetailPage(content: content),
             ),
           );
@@ -250,23 +251,19 @@ class WatchlistDetailPage extends StatelessWidget {
   }
 
   Widget _buildContentImage(BuildContext context, String? base64Image) {
-    try {
-      if (base64Image != null && base64Image.isNotEmpty) {
-        final decodedBytes = base64Decode(base64Image);
-        return Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            image: DecorationImage(
-              image: MemoryImage(decodedBytes),
-              fit: BoxFit.cover,
-            ),
+    final bytes = decodeBase64Cached(base64Image);
+    if (bytes != null) {
+      return Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          image: DecorationImage(
+            image: MemoryImage(bytes),
+            fit: BoxFit.cover,
           ),
-        );
-      }
-    } catch (e) {
-      // Fall through to default icon
+        ),
+      );
     }
 
     return Container(

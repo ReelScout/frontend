@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../dto/request/watchlist_request_dto.dart';
+import 'package:frontend/dto/request/watchlist_request_dto.dart';
 
 /// Base class for all watchlist-related events
 abstract class WatchlistEvent extends Equatable {

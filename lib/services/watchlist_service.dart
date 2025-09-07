@@ -1,9 +1,9 @@
 import 'package:frontend/dto/response/custom_response_dto.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:dio/dio.dart';
-import '../dto/request/watchlist_request_dto.dart';
-import '../dto/response/watchlist_response_dto.dart';
-import '../dto/response/watchlist_with_contents_response_dto.dart';
+import 'package:frontend/dto/request/watchlist_request_dto.dart';
+import 'package:frontend/dto/response/watchlist_response_dto.dart';
+import 'package:frontend/dto/response/watchlist_with_contents_response_dto.dart';
 
 part 'generated/watchlist_service.g.dart';
 

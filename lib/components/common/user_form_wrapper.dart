@@ -5,23 +5,23 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../bloc/content/content_bloc.dart';
-import '../../bloc/content/content_event.dart';
-import '../../bloc/content/content_state.dart';
-import '../../dto/request/member_request_dto.dart';
-import '../../dto/request/production_company_request_dto.dart';
-import '../../dto/request/user_request_dto.dart';
-import '../../dto/response/member_response_dto.dart';
-import '../../dto/response/production_company_response_dto.dart';
-import '../../dto/response/user_response_dto.dart';
-import '../../model/location.dart';
-import '../../model/owner.dart';
-import '../../styles/app_colors.dart';
-import '../content/genres_section.dart';
-import '../signup/signup_form_components.dart';
-import '../signup/account_form_section.dart';
-import '../signup/member_form_section.dart';
-import '../signup/company_form_sections.dart';
+import 'package:frontend/bloc/content/content_bloc.dart';
+import 'package:frontend/bloc/content/content_event.dart';
+import 'package:frontend/bloc/content/content_state.dart';
+import 'package:frontend/components/content/genres_section.dart';
+import 'package:frontend/components/signup/account_form_section.dart';
+import 'package:frontend/components/signup/company_form_sections.dart';
+import 'package:frontend/components/signup/member_form_section.dart';
+import 'package:frontend/components/signup/signup_form_components.dart';
+import 'package:frontend/dto/request/member_request_dto.dart';
+import 'package:frontend/dto/request/production_company_request_dto.dart';
+import 'package:frontend/dto/request/user_request_dto.dart';
+import 'package:frontend/dto/response/member_response_dto.dart';
+import 'package:frontend/dto/response/production_company_response_dto.dart';
+import 'package:frontend/dto/response/user_response_dto.dart';
+import 'package:frontend/model/location.dart';
+import 'package:frontend/model/owner.dart';
+import 'package:frontend/styles/app_colors.dart';
 
 class UserFormWrapper extends HookWidget {
   const UserFormWrapper({
@@ -37,7 +37,7 @@ class UserFormWrapper extends HookWidget {
 
   final String title;
   final String submitButtonText;
-  final Function(UserRequestDto request) onSubmit;
+  final void Function(UserRequestDto request) onSubmit;
   final bool showAccountTypeSelector;
   final UserResponseDto? existingUser;
   final bool isLoading;

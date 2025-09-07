@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../dto/request/user_request_dto.dart';
+import 'package:frontend/dto/request/user_request_dto.dart';
 
 abstract class UserProfileEvent extends Equatable {
   const UserProfileEvent();

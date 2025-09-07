@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:dio/dio.dart';
 import 'package:frontend/dto/response/custom_response_dto.dart';
-import '../dto/request/user_password_change_request_dto.dart';
-import '../services/user_service.dart';
-import '../styles/app_colors.dart';
-import '../config/injection_container.dart';
+import 'package:frontend/utils/error_utils.dart';
+import 'package:frontend/config/injection_container.dart';
+import 'package:frontend/dto/request/user_password_change_request_dto.dart';
+import 'package:frontend/services/user_service.dart';
+import 'package:frontend/styles/app_colors.dart';
 
 class PasswordChangeDialog extends HookWidget {
   const PasswordChangeDialog({super.key});
@@ -67,7 +68,8 @@ class PasswordChangeDialog extends HookWidget {
           confirmPassword: confirmPasswordController.text,
         );
 
-        CustomResponseDto response = await userService.changePassword(requestDto);
+        final CustomResponseDto response = await userService.changePassword(requestDto);
+        if (!context.mounted) return;
 
         Navigator.of(context).pop(true);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -77,7 +79,9 @@ class PasswordChangeDialog extends HookWidget {
           ),
         );
       } catch (e) {
-        final String error = e is DioException ? CustomResponseDto.fromJson(e.response?.data).message : 'An unexpected error occurred';
+        if (!context.mounted) return;
+        final String error =
+            e is DioException ? mapDioError(e) : kGenericErrorMessage;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(error),

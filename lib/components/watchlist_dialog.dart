@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../bloc/watchlist/watchlist_bloc.dart';
-import '../bloc/watchlist/watchlist_event.dart';
-import '../bloc/watchlist/watchlist_state.dart';
-import '../dto/request/watchlist_request_dto.dart';
-import '../dto/response/watchlist_response_dto.dart';
+import 'package:frontend/bloc/watchlist/watchlist_bloc.dart';
+import 'package:frontend/bloc/watchlist/watchlist_event.dart';
+import 'package:frontend/bloc/watchlist/watchlist_state.dart';
+import 'package:frontend/dto/request/watchlist_request_dto.dart';
+import 'package:frontend/dto/response/watchlist_response_dto.dart';
 
 class WatchlistDialog extends HookWidget {
   final WatchlistResponseDto? watchlistToEdit;

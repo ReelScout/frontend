@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import '../../model/owner.dart';
-import 'signup_form_components.dart';
+import 'package:frontend/model/owner.dart';
+import 'package:frontend/components/signup/signup_form_components.dart';
 
 class CompanyFormSections extends HookWidget {
   const CompanyFormSections({
@@ -29,8 +29,8 @@ class CompanyFormSections extends HookWidget {
   final TextEditingController postalController;
   final List<Owner> owners;
   final VoidCallback onAddOwner;
-  final Function(int) onRemoveOwner;
-  final Function(int, Owner) onUpdateOwner;
+  final void Function(int) onRemoveOwner;
+  final void Function(int, Owner) onUpdateOwner;
   final bool isEnabled;
 
   @override

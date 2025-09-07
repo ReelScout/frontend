@@ -1,8 +1,8 @@
 import 'package:frontend/dto/request/user_request_dto.dart';
 import 'package:json_annotation/json_annotation.dart';
 
-import '../../model/location.dart';
-import '../../model/owner.dart';
+import 'package:frontend/model/location.dart';
+import 'package:frontend/model/owner.dart';
 
 part '../generated/request/production_company_request_dto.g.dart';
 

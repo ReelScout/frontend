@@ -1,7 +1,10 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../services/content_service.dart';
-import 'content_event.dart';
-import 'content_state.dart';
+import 'package:frontend/dto/response/content_response_dto.dart';
+import 'package:frontend/services/content_service.dart';
+import 'package:frontend/bloc/content/content_event.dart';
+import 'package:frontend/bloc/content/content_state.dart';
+import 'package:frontend/utils/error_utils.dart';
 
 class ContentBloc extends Bloc<ContentEvent, ContentState> {
   ContentBloc({
@@ -32,9 +35,13 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         content: content,
         message: 'Content added successfully!',
       ));
-    } catch (error) {
+    } on DioException catch (e) {
       emit(ContentAddError(
-        message: error.toString(),
+        message: mapDioError(e),
+      ));
+    } catch (_) {
+      emit(const ContentAddError(
+        message: kGenericErrorMessage,
       ));
     }
   }
@@ -51,9 +58,13 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         content: content,
         message: 'Content updated successfully!',
       ));
-    } catch (error) {
+    } on DioException catch (e) {
       emit(ContentUpdateError(
-        message: error.toString(),
+        message: mapDioError(e),
+      ));
+    } catch (_) {
+      emit(const ContentUpdateError(
+        message: kGenericErrorMessage,
       ));
     }
   }
@@ -69,9 +80,13 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
       emit(const ContentDeleteSuccess(
         message: 'Content deleted successfully!',
       ));
-    } catch (error) {
+    } on DioException catch (e) {
       emit(ContentDeleteError(
-        message: error.toString(),
+        message: mapDioError(e),
+      ));
+    } catch (_) {
+      emit(const ContentDeleteError(
+        message: kGenericErrorMessage,
       ));
     }
   }
@@ -84,26 +99,28 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     
     try {
       final contents = await _contentService.getAllContent();
-      
-      // Apply client-side filtering
-      List<dynamic> filteredContents = contents;
-      
+
+      // Apply client-side filtering with strong typing
+      List<ContentResponseDto> filtered = contents;
+
       if (event.genreFilter != null && event.genreFilter!.isNotEmpty) {
-        filteredContents = filteredContents.where((content) {
-          return content.genres.contains(event.genreFilter);
-        }).toList();
+        final genre = event.genreFilter!;
+        filtered = filtered.where((c) => c.genres.contains(genre)).toList();
       }
-      
+
       if (event.contentTypeFilter != null && event.contentTypeFilter!.isNotEmpty) {
-        filteredContents = filteredContents.where((content) {
-          return content.contentType == event.contentTypeFilter;
-        }).toList();
+        final type = event.contentTypeFilter!;
+        filtered = filtered.where((c) => c.contentType == type).toList();
       }
-      
-      emit(ContentLoaded(contents: filteredContents.cast()));
-    } catch (error) {
+
+      emit(ContentLoaded(contents: filtered));
+    } on DioException catch (e) {
       emit(ContentError(
-        message: error.toString(),
+        message: mapDioError(e),
+      ));
+    } catch (_) {
+      emit(const ContentError(
+        message: kGenericErrorMessage,
       ));
     }
   }
@@ -117,9 +134,13 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     try {
       final contentTypes = await _contentService.getContentTypes();
       emit(ContentTypesLoaded(contentTypes: contentTypes));
-    } catch (error) {
+    } on DioException catch (e) {
       emit(ContentTypesError(
-        message: error.toString(),
+        message: mapDioError(e),
+      ));
+    } catch (_) {
+      emit(const ContentTypesError(
+        message: kGenericErrorMessage,
       ));
     }
   }
@@ -133,9 +154,13 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     try {
       final genres = await _contentService.getGenres();
       emit(GenresLoaded(genres: genres));
-    } catch (error) {
+    } on DioException catch (e) {
       emit(GenresError(
-        message: error.toString(),
+        message: mapDioError(e),
+      ));
+    } catch (_) {
+      emit(const GenresError(
+        message: kGenericErrorMessage,
       ));
     }
   }
@@ -149,9 +174,13 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     try {
       final contents = await _contentService.getMyContents();
       emit(ContentLoaded(contents: contents));
-    } catch (error) {
+    } on DioException catch (e) {
       emit(ContentError(
-        message: error.toString(),
+        message: mapDioError(e),
+      ));
+    } catch (_) {
+      emit(const ContentError(
+        message: kGenericErrorMessage,
       ));
     }
   }

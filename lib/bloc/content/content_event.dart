@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../dto/request/content_request_dto.dart';
+import 'package:frontend/dto/request/content_request_dto.dart';
 
 abstract class ContentEvent extends Equatable {
   const ContentEvent();

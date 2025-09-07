@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
-import '../../dto/response/watchlist_response_dto.dart';
-import '../../dto/response/watchlist_with_contents_response_dto.dart';
+import 'package:frontend/dto/response/watchlist_response_dto.dart';
+import 'package:frontend/dto/response/watchlist_with_contents_response_dto.dart';
 
 /// Base class for all watchlist states
 abstract class WatchlistState extends Equatable {

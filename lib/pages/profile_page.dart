@@ -1,28 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../config/injection_container.dart';
-import '../screens/login_screen.dart';
-import '../bloc/auth/auth_bloc.dart';
-import '../bloc/auth/auth_state.dart';
-import '../bloc/auth/auth_event.dart';
-import '../bloc/user_profile/user_profile_bloc.dart';
-import '../bloc/user_profile/user_profile_event.dart';
-import '../bloc/user_profile/user_profile_state.dart';
-import '../components/profile_avatar.dart';
-import '../components/password_change_helper.dart';
-import '../screens/profile_update_screen.dart';
-import '../pages/manage_contents_page.dart';
-import '../pages/watchlists_page.dart';
-import '../bloc/watchlist/watchlist_bloc.dart';
-import '../bloc/watchlist/watchlist_event.dart';
-import '../bloc/watchlist/watchlist_state.dart';
-import '../services/watchlist_service.dart';
-import '../dto/response/user_response_dto.dart';
-import '../dto/response/member_response_dto.dart';
-import '../dto/response/production_company_response_dto.dart';
-import '../dto/response/watchlist_response_dto.dart';
-import '../pages/watchlist_detail_page.dart';
-import '../model/location.dart';
+import 'package:frontend/bloc/auth/auth_bloc.dart';
+import 'package:frontend/bloc/auth/auth_event.dart';
+import 'package:frontend/bloc/auth/auth_state.dart';
+import 'package:frontend/bloc/user_profile/user_profile_bloc.dart';
+import 'package:frontend/bloc/user_profile/user_profile_event.dart';
+import 'package:frontend/bloc/user_profile/user_profile_state.dart';
+import 'package:frontend/bloc/watchlist/watchlist_bloc.dart';
+import 'package:frontend/bloc/watchlist/watchlist_event.dart';
+import 'package:frontend/bloc/watchlist/watchlist_state.dart';
+import 'package:frontend/components/password_change_helper.dart';
+import 'package:frontend/components/profile_avatar.dart';
+import 'package:frontend/config/injection_container.dart';
+import 'package:frontend/dto/response/member_response_dto.dart';
+import 'package:frontend/dto/response/production_company_response_dto.dart';
+import 'package:frontend/dto/response/user_response_dto.dart';
+import 'package:frontend/dto/response/watchlist_response_dto.dart';
+import 'package:frontend/model/location.dart';
+import 'package:frontend/pages/manage_contents_page.dart';
+import 'package:frontend/pages/watchlist_detail_page.dart';
+import 'package:frontend/pages/watchlists_page.dart';
+import 'package:frontend/screens/login_screen.dart';
+import 'package:frontend/screens/profile_update_screen.dart';
+import 'package:frontend/services/watchlist_service.dart';
 
 class ProfilePage extends StatelessWidget {
   final UserResponseDto? viewingUser; // Optional user to view (if null, shows current user's profile)
@@ -269,9 +269,9 @@ class ProfilePage extends StatelessWidget {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () async {
-                      final result = await Navigator.push(
+                      final result = await Navigator.push<bool>(
                         context,
-                        MaterialPageRoute(
+                        MaterialPageRoute<bool>(
                           builder: (context) => const ProfileUpdateScreen(),
                         ),
                       );
@@ -324,7 +324,7 @@ class ProfilePage extends StatelessWidget {
                         // Navigate to watchlists page
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
+                          MaterialPageRoute<void>(
                             builder: (context) => BlocProvider(
                               create: (context) => WatchlistBloc(
                                 watchlistService: getIt<WatchlistService>(),
@@ -359,7 +359,7 @@ class ProfilePage extends StatelessWidget {
                         // Navigate to manage contents page
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
+                          MaterialPageRoute<void>(
                             builder: (context) => const ManageContentsPage(),
                           ),
                         );
@@ -571,7 +571,7 @@ class ProfilePage extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const LoginScreen(),
                     ),
                   );
@@ -760,7 +760,7 @@ class ProfilePage extends StatelessWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
+            MaterialPageRoute<void>(
               builder: (context) => WatchlistDetailPage(
                 watchlistId: watchlist.id,
                 watchlistName: watchlist.name,

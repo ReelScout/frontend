@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
+import 'dart:typed_data';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../dto/response/content_response_dto.dart';
-import '../styles/app_colors.dart';
-import '../bloc/watchlist/watchlist_bloc.dart';
-import '../bloc/watchlist/watchlist_event.dart';
-import '../bloc/watchlist/watchlist_state.dart';
+import 'package:frontend/bloc/watchlist/watchlist_bloc.dart';
+import 'package:frontend/bloc/watchlist/watchlist_event.dart';
+import 'package:frontend/bloc/watchlist/watchlist_state.dart';
+import 'package:frontend/dto/response/content_response_dto.dart';
+import 'package:frontend/styles/app_colors.dart';
+import 'package:frontend/utils/base64_image_cache.dart';
 
 class ContentDetailPage extends StatelessWidget {
   final ContentResponseDto content;
@@ -91,17 +92,17 @@ class ContentDetailPage extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
-                    BoxShadow(
+                    const BoxShadow(
                       color: Colors.black26,
                       blurRadius: 8,
-                      offset: const Offset(0, 4),
+                      offset: Offset(0, 4),
                     ),
                   ],
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.memory(
-                    base64Decode(content.base64Image!),
+                    decodeBase64Cached(content.base64Image!) ?? Uint8List(0),
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
@@ -355,11 +356,11 @@ class _WatchlistDialogState extends State<WatchlistDialog> {
       child: BlocBuilder<WatchlistBloc, WatchlistState>(
         builder: (context, state) {
           return AlertDialog(
-            title: Row(
+            title: const Row(
               children: [
-                const Icon(Icons.playlist_add, color: Colors.blue),
-                const SizedBox(width: 8),
-                const Text('Manage Watchlists'),
+                Icon(Icons.playlist_add, color: Colors.blue),
+                SizedBox(width: 8),
+                Text('Manage Watchlists'),
               ],
             ),
             content: SizedBox(
@@ -532,7 +533,7 @@ class _WatchlistDialogState extends State<WatchlistDialog> {
         ));
         
         // Wait a bit for the operation to complete
-        await Future.delayed(const Duration(milliseconds: 500));
+        await Future<void>.delayed(const Duration(milliseconds: 500));
         
         setState(() {
           selectedWatchlistIds.add(watchlistId);
@@ -554,7 +555,7 @@ class _WatchlistDialogState extends State<WatchlistDialog> {
         ));
         
         // Wait a bit for the operation to complete
-        await Future.delayed(const Duration(milliseconds: 500));
+        await Future<void>.delayed(const Duration(milliseconds: 500));
         
         setState(() {
           selectedWatchlistIds.remove(watchlistId);

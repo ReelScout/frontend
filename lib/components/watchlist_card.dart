@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../dto/response/watchlist_response_dto.dart';
+import 'package:frontend/dto/response/watchlist_response_dto.dart';
 
 class WatchlistCard extends StatelessWidget {
   const WatchlistCard({

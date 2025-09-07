@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../dto/request/user_login_request_dto.dart';
-import '../bloc/auth/auth_bloc.dart';
-import '../bloc/auth/auth_event.dart';
-import '../bloc/auth/auth_state.dart';
-import '../styles/app_colors.dart';
-import 'signup_screen.dart';
+import 'package:frontend/bloc/auth/auth_bloc.dart';
+import 'package:frontend/bloc/auth/auth_event.dart';
+import 'package:frontend/bloc/auth/auth_state.dart';
+import 'package:frontend/dto/request/user_login_request_dto.dart';
+import 'package:frontend/styles/app_colors.dart';
+import 'package:frontend/screens/signup_screen.dart';
 
 class LoginScreen extends HookWidget {
   const LoginScreen({super.key});
@@ -125,7 +125,7 @@ class LoginScreen extends HookWidget {
     return Container(
       width: 120,
       height: 120,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.primary,
         shape: BoxShape.circle,
       ),
@@ -159,7 +159,7 @@ class LoginScreen extends HookWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
+              const Text(
                 'ReelScout',
                 style: TextStyle(
                   fontSize: 28,
@@ -169,7 +169,7 @@ class LoginScreen extends HookWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              Text(
+              const Text(
                 'Welcome back! Please sign in to continue.',
                 style: TextStyle(
                   color: AppColors.textSecondary,
@@ -234,7 +234,7 @@ class LoginScreen extends HookWidget {
                       ),
                     );
                   },
-                  child: Text(
+                  child: const Text(
                     'Forgot Password?',
                     style: TextStyle(
                       color: AppColors.primary,
@@ -282,17 +282,17 @@ class LoginScreen extends HookWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(
+        const Text(
           "Don't have an account? ",
           style: TextStyle(color: AppColors.textSecondary),
         ),
         TextButton(
           onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SignUpScreen()),
+            Navigator.of(context).push<void>(
+              MaterialPageRoute<void>(builder: (_) => const SignUpScreen()),
             );
           },
-          child: Text(
+          child: const Text(
             'Sign Up',
             style: TextStyle(
               color: AppColors.primary,

@@ -1,10 +1,10 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
-import '../../services/auth_service.dart';
-import '../../services/token_service.dart';
-import '../../dto/response/custom_response_dto.dart';
-import 'auth_event.dart';
-import 'auth_state.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend/services/auth_service.dart';
+import 'package:frontend/services/token_service.dart';
+import 'package:frontend/utils/error_utils.dart';
+import 'package:frontend/bloc/auth/auth_event.dart';
+import 'package:frontend/bloc/auth/auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   AuthBloc({
@@ -41,23 +41,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         message: 'Login successful!',
       ));
     } on DioException catch (e) {
-      // Use interceptor's standardized error messages for common errors
-      String errorMessage = e.error?.toString() ?? 'Login failed';
-      
-      // Only handle login-specific API error responses
-      if (e.response?.data != null) {
-        try {
-          final customResponse = CustomResponseDto.fromJson(e.response!.data);
-          errorMessage = customResponse.message;
-        } catch (_) {
-          // Use interceptor's standardized error message
-          errorMessage = e.error?.toString() ?? 'Login failed';
-        }
-      }
-      
-      emit(AuthFailure(error: errorMessage));
-    } catch (e) {
-      emit(AuthFailure(error: 'An unexpected error occurred: $e'));
+      emit(AuthFailure(error: mapDioError(e)));
+    } catch (_) {
+      emit(const AuthFailure(error: kGenericErrorMessage));
     }
   }
 
@@ -97,20 +83,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       emit(const AuthSuccess(message: 'Registration successful!'));
     } on DioException catch (e) {
-      String errorMessage = e.error?.toString() ?? 'Registration failed';
-
-      if (e.response?.data != null) {
-        try {
-          final customResponse = CustomResponseDto.fromJson(e.response!.data);
-          errorMessage = customResponse.message;
-        } catch (_) {
-          errorMessage = e.error?.toString() ?? 'Registration failed';
-        }
-      }
-
-      emit(AuthFailure(error: errorMessage));
-    } catch (e) {
-      emit(AuthFailure(error: 'An unexpected error occurred: $e'));
+      emit(AuthFailure(error: mapDioError(e)));
+    } catch (_) {
+      emit(const AuthFailure(error: kGenericErrorMessage));
     }
   }
 }

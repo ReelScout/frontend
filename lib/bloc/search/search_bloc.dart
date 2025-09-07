@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../services/search_service.dart';
-import 'search_event.dart';
-import 'search_state.dart';
+import 'package:frontend/services/search_service.dart';
+import 'package:frontend/bloc/search/search_event.dart';
+import 'package:frontend/bloc/search/search_state.dart';
+import 'package:frontend/utils/error_utils.dart';
 
 const _debounceDuration = Duration(milliseconds: 500);
 
@@ -64,9 +66,14 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       } else {
         emit(SearchLoaded(results: results, query: query));
       }
-    } catch (error) {
+    } on DioException catch (e) {
       emit(SearchError(
-        message: 'Search failed. Please try again. Error: $error',
+        message: mapDioError(e),
+        query: query,
+      ));
+    } catch (_) {
+      emit(SearchError(
+        message: kGenericErrorMessage,
         query: query,
       ));
     }

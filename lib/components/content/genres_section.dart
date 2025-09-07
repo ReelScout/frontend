@@ -13,7 +13,7 @@ class GenresSection extends HookWidget {
 
   final List<String> availableGenres;
   final List<String> selectedGenres;
-  final Function(List<String>) onGenresChanged;
+  final void Function(List<String>) onGenresChanged;
   final bool isRequired;
   final bool readOnly;
 
