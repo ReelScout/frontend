@@ -27,4 +27,7 @@ abstract class WatchlistService {
 
   @PATCH('/{watchlistId}/remove-content/{contentId}')
   Future<CustomResponseDto> removeContentFromWatchlist(@Path() int watchlistId, @Path() int contentId);
+
+  @GET('/by-content/{contentId}')
+  Future<List<WatchlistResponseDto>> getWatchlistsByContentId(@Path() int contentId);
 }

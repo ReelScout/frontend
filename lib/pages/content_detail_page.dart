@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../dto/response/content_response_dto.dart';
 import '../styles/app_colors.dart';
+import '../bloc/watchlist/watchlist_bloc.dart';
+import '../bloc/watchlist/watchlist_event.dart';
+import '../bloc/watchlist/watchlist_state.dart';
 
 class ContentDetailPage extends StatelessWidget {
   final ContentResponseDto content;
@@ -37,6 +41,28 @@ class ContentDetailPage extends StatelessWidget {
     }
   }
 
+  void _showWatchlistDialog(BuildContext context) {
+    final watchlistBloc = context.read<WatchlistBloc>();
+    
+    // Load watchlists if not already loaded
+    if (watchlistBloc.state is! WatchlistLoaded) {
+      watchlistBloc.add(const LoadWatchlists());
+    } else {
+      // Load watchlists that contain this content
+      watchlistBloc.add(LoadWatchlistsByContentId(contentId: content.id));
+    }
+
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return BlocProvider.value(
+          value: watchlistBloc,
+          child: WatchlistDialog(content: content),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -44,6 +70,13 @@ class ContentDetailPage extends StatelessWidget {
         title: Text(content.title),
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: AppColors.white,
+        actions: [
+          IconButton(
+            onPressed: () => _showWatchlistDialog(context),
+            icon: const Icon(Icons.add_circle),
+            tooltip: 'Add to watchlist',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -282,5 +315,277 @@ class ContentDetailPage extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class WatchlistDialog extends StatefulWidget {
+  final ContentResponseDto content;
+
+  const WatchlistDialog({
+    super.key,
+    required this.content,
+  });
+
+  @override
+  State<WatchlistDialog> createState() => _WatchlistDialogState();
+}
+
+class _WatchlistDialogState extends State<WatchlistDialog> {
+  final Set<int> selectedWatchlistIds = <int>{};
+  final Set<int> loadingWatchlistIds = <int>{};
+  bool _isInitialized = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<WatchlistBloc, WatchlistState>(
+      listener: (context, state) {
+        if (state is WatchlistLoaded) {
+          // Initialize selected watchlists when first loaded
+          if (state.watchlistsWithContent != null && !_isInitialized) {
+            setState(() {
+              selectedWatchlistIds.clear();
+              selectedWatchlistIds.addAll(state.watchlistsWithContent!.map((w) => w.id));
+              _isInitialized = true;
+            });
+          } else if (state.watchlists.isNotEmpty && !_isInitialized) {
+            context.read<WatchlistBloc>().add(LoadWatchlistsByContentId(contentId: widget.content.id));
+          }
+        }
+      },
+      child: BlocBuilder<WatchlistBloc, WatchlistState>(
+        builder: (context, state) {
+          return AlertDialog(
+            title: Row(
+              children: [
+                const Icon(Icons.playlist_add, color: Colors.blue),
+                const SizedBox(width: 8),
+                const Text('Manage Watchlists'),
+              ],
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: _buildDialogContent(state),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Done'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildDialogContent(WatchlistState state) {
+    if (state is WatchlistLoading) {
+      return const SizedBox(
+        height: 200,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Loading watchlists...'),
+            ],
+          ),
+        ),
+      );
+    } else if (state is WatchlistError) {
+      return SizedBox(
+        height: 200,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error, color: Colors.red, size: 48),
+              const SizedBox(height: 16),
+              Text(
+                state.message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.red),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  context.read<WatchlistBloc>().add(const LoadWatchlists());
+                },
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else if (state is WatchlistLoaded) {
+      if (state.watchlists.isEmpty) {
+        return SizedBox(
+          height: 200,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.playlist_remove, size: 48, color: Colors.grey),
+                const SizedBox(height: 16),
+                const Text(
+                  'No watchlists found',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Create a watchlist first to add content',
+                  style: TextStyle(color: Colors.grey[600]),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Select watchlists for "${widget.content.title}":',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: state.watchlists.length,
+              itemBuilder: (context, index) {
+                final watchlist = state.watchlists[index];
+                final isSelected = selectedWatchlistIds.contains(watchlist.id);
+                final isLoading = loadingWatchlistIds.contains(watchlist.id);
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  elevation: 1,
+                  child: CheckboxListTile(
+                    title: Text(
+                      watchlist.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: isLoading ? Colors.grey : null,
+                      ),
+                    ),
+                    subtitle: Row(
+                      children: [
+                        Icon(
+                          watchlist.isPublic ? Icons.public : Icons.lock,
+                          size: 14,
+                          color: watchlist.isPublic ? Colors.green[600] : Colors.orange[600],
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          watchlist.isPublic ? 'Public' : 'Private',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                          ),
+                        ),
+                        if (isLoading) ...[
+                          const SizedBox(width: 8),
+                          const SizedBox(
+                            height: 12,
+                            width: 12,
+                            child: CircularProgressIndicator(strokeWidth: 1.5),
+                          ),
+                        ],
+                      ],
+                    ),
+                    value: isSelected,
+                    enabled: !isLoading,
+                    onChanged: isLoading ? null : (bool? value) async {
+                      await _handleWatchlistToggle(watchlist.id, value ?? false);
+                    },
+                    controlAffinity: ListTileControlAffinity.trailing,
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  Future<void> _handleWatchlistToggle(int watchlistId, bool shouldAdd) async {
+    setState(() {
+      loadingWatchlistIds.add(watchlistId);
+    });
+
+    try {
+      final bloc = context.read<WatchlistBloc>();
+      
+      if (shouldAdd) {
+        bloc.add(AddContentToWatchlist(
+          watchlistId: watchlistId,
+          contentId: widget.content.id,
+        ));
+        
+        // Wait a bit for the operation to complete
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        setState(() {
+          selectedWatchlistIds.add(watchlistId);
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Content added to watchlist'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        bloc.add(RemoveContentFromWatchlist(
+          watchlistId: watchlistId,
+          contentId: widget.content.id,
+        ));
+        
+        // Wait a bit for the operation to complete
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        setState(() {
+          selectedWatchlistIds.remove(watchlistId);
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Content removed from watchlist'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Operation failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          loadingWatchlistIds.remove(watchlistId);
+        });
+      }
+    }
   }
 }

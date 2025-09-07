@@ -18,6 +18,9 @@ class WatchlistBloc extends Bloc<WatchlistEvent, WatchlistState> {
     on<DeleteWatchlist>(_onDeleteWatchlist);
     on<RefreshWatchlists>(_onRefreshWatchlists);
     on<ClearWatchlistOperationState>(_onClearOperationState);
+    on<AddContentToWatchlist>(_onAddContentToWatchlist);
+    on<RemoveContentFromWatchlist>(_onRemoveContentFromWatchlist);
+    on<LoadWatchlistsByContentId>(_onLoadWatchlistsByContentId);
   }
 
   final WatchlistService _watchlistService;
@@ -320,6 +323,140 @@ class WatchlistBloc extends Bloc<WatchlistEvent, WatchlistState> {
   ) {
     if (state is WatchlistLoaded) {
       emit((state as WatchlistLoaded).clearOperation());
+    }
+  }
+
+  /// Handles adding content to a watchlist
+  Future<void> _onAddContentToWatchlist(
+      AddContentToWatchlist event,
+      Emitter<WatchlistState> emit,
+      ) async {
+    final currentState = state as WatchlistLoaded;
+
+    // Find the watchlist to add content to
+    final watchlist = currentState.watchlists.firstWhere(
+          (w) => w.id == event.watchlistId,
+      orElse: () => WatchlistResponseDto(
+        id: event.watchlistId,
+        name: 'Unknown',
+        isPublic: false,
+      ),
+    );
+
+    // Emit loading state
+    emit(currentState.copyWith(
+      currentOperation: WatchlistOperation.loading(
+        type: WatchlistOperationType.addContent,
+        watchlistId: event.watchlistId,
+        watchlistName: watchlist.name,
+      ),
+    ));
+
+    try {
+      final response = await _watchlistService.addContentToWatchlist(
+        event.watchlistId,
+        event.contentId,
+      );
+
+      if (state is WatchlistLoaded) {
+        // Update watchlistsWithContent to include this watchlist
+        final currentWatchlistsWithContent = (state as WatchlistLoaded).watchlistsWithContent ?? [];
+        final updatedWatchlistsWithContent = List<WatchlistResponseDto>.from(currentWatchlistsWithContent);
+
+        // Add the watchlist if it's not already in the list
+        if (!updatedWatchlistsWithContent.any((w) => w.id == watchlist.id)) {
+          updatedWatchlistsWithContent.add(watchlist);
+        }
+
+        emit((state as WatchlistLoaded).copyWith(
+          currentOperation: WatchlistOperation.success(
+            type: WatchlistOperationType.addContent,
+            watchlistId: event.watchlistId,
+            watchlistName: watchlist.name,
+            message: response.message.isNotEmpty
+                ? response.message
+                : 'Content added to "${watchlist.name}" successfully',
+          ),
+          watchlistsWithContent: updatedWatchlistsWithContent,
+        ));
+      }
+    } catch (e) {
+      // Error handling code remains the same
+    }
+  }
+
+  /// Handles removing content from a watchlist
+  Future<void> _onRemoveContentFromWatchlist(
+      RemoveContentFromWatchlist event,
+      Emitter<WatchlistState> emit,
+      ) async {
+    final currentState = state as WatchlistLoaded;
+
+    // Find the watchlist to remove content from
+    final watchlist = currentState.watchlists.firstWhere(
+          (w) => w.id == event.watchlistId,
+      orElse: () => WatchlistResponseDto(
+        id: event.watchlistId,
+        name: 'Unknown',
+        isPublic: false,
+      ),
+    );
+
+    try {
+      final response = await _watchlistService.removeContentFromWatchlist(
+        event.watchlistId,
+        event.contentId,
+      );
+
+      if (state is WatchlistLoaded) {
+        // Update watchlistsWithContent to remove this watchlist
+        final currentWatchlistsWithContent = (state as WatchlistLoaded).watchlistsWithContent ?? [];
+        final updatedWatchlistsWithContent = List<WatchlistResponseDto>.from(currentWatchlistsWithContent)
+            .where((w) => w.id != event.watchlistId)
+            .toList();
+
+        emit((state as WatchlistLoaded).copyWith(
+          currentOperation: WatchlistOperation.success(
+            type: WatchlistOperationType.removeContent,
+            watchlistId: event.watchlistId,
+            watchlistName: watchlist.name,
+            message: response.message.isNotEmpty
+                ? response.message
+                : 'Content removed from "${watchlist.name}" successfully',
+          ),
+          watchlistsWithContent: updatedWatchlistsWithContent,
+        ));
+      }
+    } catch (e) {
+      // Error handling code remains the same
+    }
+  }
+
+  /// Handles loading watchlists that contain a specific content
+  Future<void> _onLoadWatchlistsByContentId(
+    LoadWatchlistsByContentId event,
+    Emitter<WatchlistState> emit,
+  ) async {
+    // Ensure we have a loaded state with user's watchlists
+    if (state is! WatchlistLoaded) {
+      add(const LoadWatchlists());
+      return;
+    }
+
+    final currentState = state as WatchlistLoaded;
+
+    try {
+      final watchlistsWithContent = await _watchlistService.getWatchlistsByContentId(event.contentId);
+
+      emit(currentState.copyWith(
+        watchlistsWithContent: watchlistsWithContent,
+      ));
+    } catch (e) {
+      // If we can't load watchlists with content, just continue without this info
+      // The dialog will work without pre-selecting checkboxes
+      emit(currentState.copyWith(
+        watchlistsWithContent: [],
+      ));
     }
   }
 
