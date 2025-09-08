@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend/bloc/content/content_bloc.dart';
+import 'package:frontend/bloc/forum/posts_bloc.dart';
+import 'package:frontend/bloc/forum/threads_bloc.dart';
 import 'package:frontend/bloc/navigation/navigation_bloc.dart';
 import 'package:frontend/bloc/search/search_bloc.dart';
 import 'package:frontend/bloc/user_profile/user_profile_bloc.dart';
@@ -10,6 +12,7 @@ import 'package:frontend/config/injection_container.dart';
 import 'package:frontend/screens/home_screen.dart';
 import 'package:frontend/services/auth_service.dart';
 import 'package:frontend/services/content_service.dart';
+import 'package:frontend/services/forum_service.dart';
 import 'package:frontend/services/search_service.dart';
 import 'package:frontend/services/token_service.dart';
 import 'package:frontend/services/user_service.dart';
@@ -67,7 +70,17 @@ class ReelScoutApp extends StatelessWidget {
           create: (context) => WatchlistBloc(
             watchlistService: getIt<WatchlistService>(),
           ),
-        )
+        ),
+        BlocProvider<ThreadsBloc>(
+          create: (context) => ThreadsBloc(
+              forumService: getIt<ForumService>()
+          ),
+        ),
+        BlocProvider<PostsBloc>(
+          create: (context) => PostsBloc(
+              forumService: getIt<ForumService>()
+          ),
+        ),
       ],
       child: MaterialApp(
         title: 'ReelScout',

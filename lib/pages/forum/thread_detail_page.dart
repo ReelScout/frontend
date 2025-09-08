@@ -4,38 +4,70 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:frontend/bloc/forum/posts_bloc.dart';
 import 'package:frontend/bloc/forum/posts_event.dart';
 import 'package:frontend/bloc/forum/posts_state.dart';
-import 'package:frontend/config/injection_container.dart';
 import 'package:frontend/dto/response/forum_post_response_dto.dart';
-import 'package:frontend/services/forum_service.dart';
+import 'package:frontend/bloc/auth/auth_bloc.dart';
+import 'package:frontend/bloc/auth/auth_state.dart';
+import 'package:frontend/screens/login_screen.dart';
+import 'package:frontend/utils/time_ago.dart';
 
 class ThreadDetailPage extends HookWidget {
-  const ThreadDetailPage({super.key, required this.threadId, required this.threadTitle});
+  const ThreadDetailPage({super.key, required this.threadId, required this.threadTitle, this.focusPostId});
   final int threadId;
   final String threadTitle;
+  final int? focusPostId;
 
   @override
   Widget build(BuildContext context) {
-    final composerController = useTextEditingController();
-    final replyingTo = useState<int?>(null); // parentId for nested reply
-    final openReplyEditors = useState<Set<int>>({});
+    final collapsed = useState<Set<int>>({});
+    final scrolled = useState<bool>(false);
 
-    return BlocProvider(
-      create: (_) => PostsBloc(forumService: getIt<ForumService>())..add(LoadPosts(threadId: threadId)),
-      child: BlocListener<PostsBloc, PostsState>(
+    // Ensure posts are loaded for this thread when entering the page
+    useEffect(() {
+      context.read<PostsBloc>().add(LoadPosts(threadId: threadId));
+      return null;
+    }, [threadId]);
+
+    return BlocListener<PostsBloc, PostsState>(
         listenWhen: (p, n) => n is PostsLoaded && n.currentOperation != null,
         listener: (context, state) {
           if (state is PostsLoaded && state.currentOperation != null) {
             final op = state.currentOperation!;
             if (!op.isLoading && op.message != null) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(op.message!)));
-              composerController.clear();
-              replyingTo.value = null;
-              openReplyEditors.value = {};
             }
           }
         },
         child: Scaffold(
           appBar: AppBar(title: Text(threadTitle)),
+          floatingActionButton: FloatingActionButton.extended(
+            icon: const Icon(Icons.reply),
+            label: const Text('Reply'),
+            onPressed: () async {
+              final authState = context.read<AuthBloc>().state;
+              if (authState is! AuthSuccess) {
+                final go = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Login required'),
+                    content: const Text('You need to login to reply.'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                      FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Login')),
+                    ],
+                  ),
+                );
+                if (!context.mounted) return;
+                if (go == true) {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+                  );
+                }
+                if (!context.mounted) return;
+                if (context.read<AuthBloc>().state is! AuthSuccess) return;
+              }
+              await _openComposerBottomSheet(context, threadId: threadId);
+            },
+          ),
           body: Column(
             children: [
               Expanded(
@@ -54,6 +86,20 @@ class ThreadDetailPage extends HookWidget {
                     }
                     if (state is PostsLoaded) {
                       final roots = _buildPostTree(state.posts);
+                      // Build a stable key map for this frame
+                      final postKeys = {
+                        for (final p in state.posts) p.id: GlobalKey()
+                      };
+                      // Scroll to focus post if provided
+                      if (!scrolled.value && focusPostId != null && postKeys[focusPostId] != null) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          final ctx = postKeys[focusPostId!]!.currentContext;
+                          if (ctx != null) {
+                            Scrollable.ensureVisible(ctx, duration: const Duration(milliseconds: 300));
+                            scrolled.value = true;
+                          }
+                        });
+                      }
                       if (roots.isEmpty) {
                         return ListView(children: const [
                           SizedBox(height: 120),
@@ -68,15 +114,42 @@ class ThreadDetailPage extends HookWidget {
                               .map((n) => _PostNodeWidget(
                                     node: n,
                                     depth: 0,
-                                    onReply: (postId) {
-                                      openReplyEditors.value = {...openReplyEditors.value}..add(postId);
+                                    keyFor: postKeys[n.post.id]!,
+                                    postKeys: postKeys,
+                                    collapsed: collapsed.value,
+                                    onToggleCollapse: (postId) {
+                                      final set = {...collapsed.value};
+                                      if (set.contains(postId)) {
+                                        set.remove(postId);
+                                      } else {
+                                        set.add(postId);
+                                      }
+                                      collapsed.value = set;
                                     },
-                                    onCancelReply: (postId) {
-                                      openReplyEditors.value = {...openReplyEditors.value}..remove(postId);
-                                    },
-                                    showEditorFor: openReplyEditors.value,
-                                    onSubmitReply: (postId, text) {
-                                      context.read<PostsBloc>().add(CreatePost(threadId: threadId, body: text, parentId: postId));
+                                    onReplyRequested: (postId, author) async {
+                                      final authSt = context.read<AuthBloc>().state;
+                                      if (authSt is! AuthSuccess) {
+                                        final go = await showDialog<bool>(
+                                          context: context,
+                                          builder: (ctx) => AlertDialog(
+                                            title: const Text('Login required'),
+                                            content: const Text('You need to login to reply.'),
+                                            actions: [
+                                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                                              FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Login')),
+                                            ],
+                                          ),
+                                        );
+                                        if (!context.mounted) return;
+                                        if (go == true) {
+                                          await Navigator.of(context).push(
+                                            MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+                                          );
+                                        }
+                                        if (!context.mounted) return;
+                                        if (context.read<AuthBloc>().state is! AuthSuccess) return;
+                                      }
+                                      await _openComposerBottomSheet(context, threadId: threadId, parentId: postId, hint: 'Replying to @$author');
                                     },
                                   ))
                               .toList(),
@@ -87,58 +160,9 @@ class ThreadDetailPage extends HookWidget {
                   },
                 ),
               ),
-              SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: composerController,
-                          decoration: InputDecoration(
-                            hintText: replyingTo.value == null ? 'Write a reply...' : 'Replying to #${replyingTo.value}',
-                          ),
-                          minLines: 1,
-                          maxLines: 4,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      BlocBuilder<PostsBloc, PostsState>(
-                        builder: (context, state) {
-                          final isLoading = state is PostsLoaded && state.currentOperation?.isLoading == true;
-                          return Row(children: [
-                            if (replyingTo.value != null)
-                              IconButton(
-                                tooltip: 'Cancel reply',
-                                icon: const Icon(Icons.close),
-                                onPressed: () => replyingTo.value = null,
-                              ),
-                            IconButton(
-                              icon: isLoading
-                                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                                  : const Icon(Icons.send),
-                              onPressed: isLoading
-                                  ? null
-                                  : () {
-                                      final text = composerController.text.trim();
-                                      if (text.isEmpty) return;
-                                      context
-                                          .read<PostsBloc>()
-                                          .add(CreatePost(threadId: threadId, body: text, parentId: replyingTo.value));
-                                    },
-                            ),
-                          ]);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             ],
           ),
         ),
-      ),
     );
   }
 }
@@ -176,83 +200,154 @@ class _PostNodeWidget extends StatelessWidget {
   const _PostNodeWidget({
     required this.node,
     required this.depth,
-    required this.onReply,
-    required this.onCancelReply,
-    required this.onSubmitReply,
-    required this.showEditorFor,
+    required this.keyFor,
+    required this.postKeys,
+    required this.collapsed,
+    required this.onToggleCollapse,
+    required this.onReplyRequested,
   });
 
   final _PostNode node;
   final int depth;
-  final void Function(int postId) onReply;
-  final void Function(int postId) onCancelReply;
-  final void Function(int postId, String text) onSubmitReply;
-  final Set<int> showEditorFor;
+  final GlobalKey keyFor;
+  final Map<int, GlobalKey> postKeys;
+  final Set<int> collapsed;
+  final void Function(int postId) onToggleCollapse;
+  final void Function(int postId, String authorUsername) onReplyRequested;
 
   @override
   Widget build(BuildContext context) {
     final padding = EdgeInsets.only(left: depth * 16.0);
-    final showEditor = showEditorFor.contains(node.post.id);
-    final controller = TextEditingController();
     return Padding(
+      key: keyFor,
       padding: padding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Card(
             child: ListTile(
-              title: Text(node.post.authorUsername),
-              subtitle: Text(node.post.body),
-              trailing: TextButton.icon(
-                onPressed: () => onReply(node.post.id),
-                icon: const Icon(Icons.reply, size: 18),
-                label: const Text('Reply'),
-              ),
-            ),
-          ),
-          if (showEditor)
-            Padding(
-              padding: const EdgeInsets.only(left: 8, bottom: 8),
-              child: Row(
+              title: Row(
                 children: [
-                  Expanded(
-                    child: TextField(
-                      controller: controller,
-                      minLines: 1,
-                      maxLines: 3,
-                      decoration: const InputDecoration(hintText: 'Write a reply...'),
-                    ),
-                  ),
+                  Expanded(child: Text(node.post.authorUsername, overflow: TextOverflow.ellipsis)),
                   const SizedBox(width: 8),
-                  IconButton(
-                    tooltip: 'Cancel',
-                    icon: const Icon(Icons.close),
-                    onPressed: () => onCancelReply(node.post.id),
-                  ),
-                  IconButton(
-                    tooltip: 'Send',
-                    icon: const Icon(Icons.send),
-                    onPressed: () {
-                      final text = controller.text.trim();
-                      if (text.isEmpty) return;
-                      onSubmitReply(node.post.id, text);
-                    },
+                  Text(timeAgo(node.post.createdAt), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                ],
+              ),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(node.post.body),
+              ),
+              trailing: Wrap(
+                spacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  if (node.children.isNotEmpty)
+                    TextButton.icon(
+                      onPressed: () => onToggleCollapse(node.post.id),
+                      icon: Icon(collapsed.contains(node.post.id) ? Icons.unfold_more : Icons.unfold_less, size: 18),
+                      label: Text(
+                        collapsed.contains(node.post.id)
+                            ? 'Show ${node.children.length}'
+                            : 'Hide ${node.children.length}',
+                      ),
+                    ),
+                  TextButton.icon(
+                    onPressed: () => onReplyRequested(node.post.id, node.post.authorUsername),
+                    icon: const Icon(Icons.reply, size: 18),
+                    label: const Text('Reply'),
                   ),
                 ],
               ),
             ),
-          for (final child in node.children)
-            _PostNodeWidget(
-              node: child,
-              depth: depth + 1,
-              onReply: onReply,
-              onCancelReply: onCancelReply,
-              onSubmitReply: onSubmitReply,
-              showEditorFor: showEditorFor,
-            ),
+          ),
+          if (!collapsed.contains(node.post.id))
+            for (final child in node.children)
+              _PostNodeWidget(
+                node: child,
+                depth: depth + 1,
+                keyFor: postKeys[child.post.id]!,
+                postKeys: postKeys,
+                collapsed: collapsed,
+                onToggleCollapse: onToggleCollapse,
+                onReplyRequested: onReplyRequested,
+              ),
         ],
       ),
     );
   }
 }
 
+Future<void> _openComposerBottomSheet(
+  BuildContext context, {
+  required int threadId,
+  int? parentId,
+  String? hint,
+}) async {
+  final controller = TextEditingController();
+  await showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    builder: (ctx) {
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+          left: 16,
+          right: 16,
+          top: 16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(hint ?? 'Write a reply', style: const TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              minLines: 3,
+              maxLines: 6,
+              decoration: const InputDecoration(
+                hintText: 'Type your message...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: BlocBuilder<PostsBloc, PostsState>(
+                builder: (context, state) {
+                  final isLoading = state is PostsLoaded && state.currentOperation?.isLoading == true;
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextButton(
+                        onPressed: isLoading ? null : () => Navigator.of(ctx).pop(),
+                        child: const Text('Cancel'),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton.icon(
+                        icon: isLoading
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                            : const Icon(Icons.send),
+                        label: const Text('Send'),
+                        onPressed: isLoading
+                            ? null
+                            : () async {
+                                final text = controller.text.trim();
+                                if (text.isEmpty) return;
+                                context.read<PostsBloc>().add(CreatePost(threadId: threadId, body: text, parentId: parentId));
+                                // Close after send; listener will show snackbar
+                                Navigator.of(ctx).pop();
+                              },
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}

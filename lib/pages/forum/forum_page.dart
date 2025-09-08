@@ -4,11 +4,13 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:frontend/bloc/forum/threads_bloc.dart';
 import 'package:frontend/bloc/forum/threads_event.dart';
 import 'package:frontend/bloc/forum/threads_state.dart';
-import 'package:frontend/config/injection_container.dart';
 import 'package:frontend/dto/request/create_thread_request_dto.dart';
 import 'package:frontend/dto/response/content_response_dto.dart';
 import 'package:frontend/pages/forum/thread_detail_page.dart';
-import 'package:frontend/services/forum_service.dart';
+import 'package:frontend/bloc/auth/auth_bloc.dart';
+import 'package:frontend/bloc/auth/auth_state.dart';
+import 'package:frontend/screens/login_screen.dart';
+import 'package:frontend/utils/time_ago.dart';
 
 class ForumPage extends HookWidget {
   const ForumPage({super.key, required this.content});
@@ -20,10 +22,13 @@ class ForumPage extends HookWidget {
     final bodyController = useTextEditingController();
     final formKey = useMemoized(() => GlobalKey<FormState>());
 
-    return BlocProvider(
-      create: (_) => ThreadsBloc(forumService: getIt<ForumService>())
-        ..add(LoadThreads(contentId: content.id)),
-      child: BlocListener<ThreadsBloc, ThreadsState>(
+    // Ensure threads are loaded when entering the page
+    useEffect(() {
+      context.read<ThreadsBloc>().add(LoadThreads(contentId: content.id));
+      return null;
+    }, [content.id]);
+
+    return BlocListener<ThreadsBloc, ThreadsState>(
         listenWhen: (prev, next) => next is ThreadsLoaded && next.currentOperation != null,
         listener: (context, state) {
           if (state is ThreadsLoaded && state.currentOperation != null) {
@@ -40,69 +45,105 @@ class ForumPage extends HookWidget {
           appBar: AppBar(title: Text('${content.title} • Forum')),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () async {
+              final authState = context.read<AuthBloc>().state;
+              if (authState is! AuthSuccess) {
+                final go = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Login required'),
+                    content: const Text('You need to login to create a thread.'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                      FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Login')),
+                    ],
+                  ),
+                );
+                if (!context.mounted) return;
+                if (go == true) {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+                  );
+                }
+                if (!context.mounted) return;
+                if (context.read<AuthBloc>().state is! AuthSuccess) return; // still not logged in
+              }
               await showDialog<void>(
                 context: context,
-                builder: (context) {
+                builder: (dialogContext) {
                   return AlertDialog(
-                    title: const Text('Start a new thread'),
-                    content: Form(
-                      key: formKey,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          TextFormField(
-                            controller: titleController,
-                            decoration: const InputDecoration(labelText: 'Title'),
-                            validator: (v) => (v == null || v.trim().isEmpty)
-                                ? 'Title is required'
-                                : null,
-                          ),
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            controller: bodyController,
-                            maxLines: 5,
-                            decoration: const InputDecoration(labelText: 'Body'),
-                            validator: (v) => (v == null || v.trim().isEmpty)
-                                ? 'Body is required'
-                                : null,
-                          ),
-                        ],
+                      title: const Text('Start a new thread'),
+                      content: Form(
+                        key: formKey,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            TextFormField(
+                              controller: titleController,
+                              decoration: const InputDecoration(labelText: 'Title'),
+                              validator: (v) => (v == null || v.trim().isEmpty)
+                                  ? 'Title is required'
+                                  : null,
+                            ),
+                            const SizedBox(height: 12),
+                            TextFormField(
+                              controller: bodyController,
+                              maxLines: 5,
+                              decoration: const InputDecoration(labelText: 'Body'),
+                              validator: (v) => (v == null || v.trim().isEmpty)
+                                  ? 'Body is required'
+                                  : null,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Cancel'),
-                      ),
-                      BlocBuilder<ThreadsBloc, ThreadsState>(
-                        builder: (context, state) {
-                          final isLoading = state is ThreadsLoaded && state.currentOperation?.isLoading == true;
-                          return FilledButton(
-                            onPressed: isLoading
-                                ? null
-                                : () {
-                                    if (!formKey.currentState!.validate()) return;
-                                    context.read<ThreadsBloc>().add(
-                                          CreateThread(
-                                            contentId: content.id,
-                                            request: CreateThreadRequestDto(
-                                              title: titleController.text.trim(),
-                                              body: bodyController.text.trim(),
-                                            ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(dialogContext).pop(),
+                          child: const Text('Cancel'),
+                        ),
+                        BlocBuilder<ThreadsBloc, ThreadsState>(
+                          builder: (context, state) {
+                            final isLoading = state is ThreadsLoaded && state.currentOperation?.isLoading == true;
+                            return FilledButton(
+                              onPressed: isLoading
+                                  ? null
+                                  : () async {
+                                      if (!formKey.currentState!.validate()) return;
+                                      final bloc = context.read<ThreadsBloc>();
+                                      // Wait for next non-loading operation result
+                                      final next = bloc.stream.firstWhere((s) =>
+                                          s is ThreadsLoaded && s.currentOperation != null && !s.currentOperation!.isLoading);
+                                      bloc.add(
+                                        CreateThread(
+                                          contentId: content.id,
+                                          request: CreateThreadRequestDto(
+                                            title: titleController.text.trim(),
+                                            body: bodyController.text.trim(),
                                           ),
-                                        );
-                                  },
-                            child: isLoading
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  )
-                                : const Text('Create'),
-                          );
-                        },
-                      ),
-                    ],
+                                        ),
+                                      );
+                                      final stateAfter = await next;
+                                      if (!context.mounted) return;
+                                      if (stateAfter is ThreadsLoaded && stateAfter.currentOperation != null) {
+                                        // Close dialog and show feedback
+                                        Navigator.of(context, rootNavigator: true).pop();
+                                        final msg = stateAfter.currentOperation!.message;
+                                        if (msg != null) {
+                                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+                                        }
+                                      }
+                                    },
+                              child: isLoading
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : const Text('Create'),
+                            );
+                          },
+                        ),
+                      ],
                   );
                 },
               );
@@ -144,11 +185,13 @@ class ForumPage extends HookWidget {
                       return Card(
                         child: ListTile(
                           title: Text(t.title),
-                          subtitle: Text('by ${t.createdByUsername} • ${t.postCount} posts'),
+                          subtitle: Text(
+                            'by ${t.createdByUsername} • ${t.postCount} posts • ${timeAgo(t.updatedAt)}',
+                          ),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () {
                             Navigator.of(context).push(
-                              MaterialPageRoute(
+                              MaterialPageRoute<void>(
                                 builder: (_) => ThreadDetailPage(
                                   threadId: t.id,
                                   threadTitle: t.title,
@@ -166,7 +209,6 @@ class ForumPage extends HookWidget {
             },
           ),
         ),
-      ),
     );
   }
 }

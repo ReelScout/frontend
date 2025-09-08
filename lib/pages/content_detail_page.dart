@@ -81,7 +81,7 @@ class ContentDetailPage extends StatelessWidget {
           IconButton(
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(
+                MaterialPageRoute<void>(
                   builder: (_) => ForumPage(content: content),
                 ),
               );
