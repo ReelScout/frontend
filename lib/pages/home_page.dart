@@ -188,7 +188,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Browse our collection of movies and TV shows. Sign in to unlock personalized recommendations and save your favorites.',
+                      'Browse our collection of movies and TV shows.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Colors.grey[700],
                       ),
