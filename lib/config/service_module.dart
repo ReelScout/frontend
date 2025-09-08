@@ -5,6 +5,7 @@ import 'package:frontend/services/search_service.dart';
 import 'package:frontend/services/user_service.dart';
 import 'package:frontend/services/watchlist_service.dart';
 import 'package:frontend/services/forum_service.dart';
+import 'package:frontend/services/friendship_service.dart';
 import 'package:injectable/injectable.dart';
 
 @module
@@ -26,4 +27,7 @@ abstract class ServiceModule {
 
   @singleton
   ForumService forumService(Dio dio) => ForumService(dio, baseUrl: "${dio.options.baseUrl}/content/forum");
+
+  @singleton
+  FriendshipService friendshipService(Dio dio) => FriendshipService(dio, baseUrl: "${dio.options.baseUrl}/user/friends");
 }
