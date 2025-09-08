@@ -8,6 +8,6 @@ part 'generated/search_service.g.dart';
 abstract class SearchService {
   factory SearchService(Dio dio, {String? baseUrl, ParseErrorLogger? errorLogger}) = _SearchService;
 
-  @GET('/search')
+  @GET('')
   Future<SearchResponseDto> search(@Query('query') String query);
 }

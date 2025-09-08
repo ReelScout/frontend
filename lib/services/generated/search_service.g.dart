@@ -27,7 +27,7 @@ class _SearchService implements SearchService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/search',
+            '',
             queryParameters: queryParameters,
             data: _data,
           )
