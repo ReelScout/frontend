@@ -16,6 +16,9 @@ abstract class UserService {
   @GET('/all')
   Future<List<UserResponseDto>> getAll();
 
+  @GET('/id/{id}')
+  Future<UserResponseDto> getById(@Path('id') int id);
+
   @GET('/me')
   Future<UserResponseDto> getCurrentUser();
 

@@ -7,7 +7,7 @@ class ForumPostResponseDto {
   ForumPostResponseDto({
     required this.id,
     required this.threadId,
-    required this.authorUsername,
+    required this.authorId,
     required this.body,
     this.parentId,
     required this.createdAt,
@@ -16,7 +16,7 @@ class ForumPostResponseDto {
 
   final int id;
   final int threadId;
-  final String authorUsername;
+  final int authorId;
   final String body;
   final int? parentId;
   final DateTime createdAt;
@@ -27,4 +27,3 @@ class ForumPostResponseDto {
 
   Map<String, dynamic> toJson() => _$ForumPostResponseDtoToJson(this);
 }
-

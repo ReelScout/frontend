@@ -9,6 +9,11 @@ import 'package:frontend/bloc/auth/auth_bloc.dart';
 import 'package:frontend/bloc/auth/auth_state.dart';
 import 'package:frontend/screens/login_screen.dart';
 import 'package:frontend/utils/time_ago.dart';
+import 'package:frontend/components/profile_avatar.dart';
+import 'package:frontend/dto/response/user_response_dto.dart';
+import 'package:frontend/services/user_lookup.dart';
+import 'package:frontend/config/injection_container.dart';
+import 'package:frontend/services/user_service.dart';
 
 class ThreadDetailPage extends HookWidget {
   const ThreadDetailPage({super.key, required this.threadId, required this.threadTitle, this.focusPostId});
@@ -20,6 +25,8 @@ class ThreadDetailPage extends HookWidget {
   Widget build(BuildContext context) {
     final collapsed = useState<Set<int>>({});
     final scrolled = useState<bool>(false);
+    final users = useState<Map<int, UserResponseDto>>({});
+    final userLookup = useMemoized(() => UserLookup(getIt<UserService>()));
 
     // Ensure posts are loaded for this thread when entering the page
     useEffect(() {
@@ -86,6 +93,17 @@ class ThreadDetailPage extends HookWidget {
                     }
                     if (state is PostsLoaded) {
                       final roots = _buildPostTree(state.posts);
+                      // Fetch missing users after this frame
+                      WidgetsBinding.instance.addPostFrameCallback((_) async {
+                        final ids = state.posts.map((p) => p.authorId).toSet()
+                          ..removeWhere((id) => users.value.containsKey(id));
+                        if (ids.isNotEmpty) {
+                          final fetched = await userLookup.getManyById(ids);
+                          if (fetched.isNotEmpty) {
+                            users.value = {...users.value, ...fetched};
+                          }
+                        }
+                      });
                       // Build a stable key map for this frame
                       final postKeys = {
                         for (final p in state.posts) p.id: GlobalKey()
@@ -116,6 +134,7 @@ class ThreadDetailPage extends HookWidget {
                                     depth: 0,
                                     keyFor: postKeys[n.post.id]!,
                                     postKeys: postKeys,
+                                    users: users.value,
                                     collapsed: collapsed.value,
                                     onToggleCollapse: (postId) {
                                       final set = {...collapsed.value};
@@ -202,6 +221,7 @@ class _PostNodeWidget extends StatelessWidget {
     required this.depth,
     required this.keyFor,
     required this.postKeys,
+    required this.users,
     required this.collapsed,
     required this.onToggleCollapse,
     required this.onReplyRequested,
@@ -211,6 +231,7 @@ class _PostNodeWidget extends StatelessWidget {
   final int depth;
   final GlobalKey keyFor;
   final Map<int, GlobalKey> postKeys;
+  final Map<int, UserResponseDto> users;
   final Set<int> collapsed;
   final void Function(int postId) onToggleCollapse;
   final void Function(int postId, String authorUsername) onReplyRequested;
@@ -218,46 +239,107 @@ class _PostNodeWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final padding = EdgeInsets.only(left: depth * 16.0);
+    final user = users[node.post.authorId];
+    final authorName = user?.username ?? 'User #${node.post.authorId}';
+    final base64 = user?.base64Image;
     return Padding(
       key: keyFor,
       padding: padding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Card(
-            child: ListTile(
-              title: Row(
-                children: [
-                  Expanded(child: Text(node.post.authorUsername, overflow: TextOverflow.ellipsis)),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (depth > 0) ...[
+                  Container(width: 2, color: Colors.grey.shade300),
                   const SizedBox(width: 8),
-                  Text(timeAgo(node.post.createdAt), style: const TextStyle(fontSize: 12, color: Colors.grey)),
                 ],
-              ),
-              subtitle: Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(node.post.body),
-              ),
-              trailing: Wrap(
-                spacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  if (node.children.isNotEmpty)
-                    TextButton.icon(
-                      onPressed: () => onToggleCollapse(node.post.id),
-                      icon: Icon(collapsed.contains(node.post.id) ? Icons.unfold_more : Icons.unfold_less, size: 18),
-                      label: Text(
-                        collapsed.contains(node.post.id)
-                            ? 'Show ${node.children.length}'
-                            : 'Hide ${node.children.length}',
+                Expanded(
+                  child: Card(
+                    elevation: 0.5,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Small profile avatar on the left
+                          const SizedBox(width: 2),
+                          ProfileAvatar(
+                            base64Image: base64,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 10),
+                          // Main content
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Username + time (smaller than body)
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        authorName,
+                                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '• ${timeAgo(node.post.createdAt)}',
+                                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                // Body with more visual weight
+                                Text(
+                                  node.post.body,
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                                const SizedBox(height: 6),
+                                // Actions row aligned to the right: reply then hide
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    IconButton(
+                                      visualDensity: VisualDensity.compact,
+                                      tooltip: 'Reply',
+                                      iconSize: 18,
+                                      onPressed: () => onReplyRequested(node.post.id, authorName),
+                                      icon: const Icon(Icons.reply),
+                                    ),
+                                    if (node.children.isNotEmpty)
+                                      TextButton.icon(
+                                        style: TextButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          minimumSize: const Size(0, 0),
+                                        ),
+                                        onPressed: () => onToggleCollapse(node.post.id),
+                                        icon: Icon(
+                                          collapsed.contains(node.post.id) ? Icons.unfold_more : Icons.unfold_less,
+                                          size: 16,
+                                        ),
+                                        label: Text(
+                                          collapsed.contains(node.post.id)
+                                              ? 'Show ${node.children.length}'
+                                              : 'Hide',
+                                          style: const TextStyle(fontSize: 12),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  TextButton.icon(
-                    onPressed: () => onReplyRequested(node.post.id, node.post.authorUsername),
-                    icon: const Icon(Icons.reply, size: 18),
-                    label: const Text('Reply'),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           if (!collapsed.contains(node.post.id))
@@ -267,6 +349,7 @@ class _PostNodeWidget extends StatelessWidget {
                 depth: depth + 1,
                 keyFor: postKeys[child.post.id]!,
                 postKeys: postKeys,
+                users: users,
                 collapsed: collapsed,
                 onToggleCollapse: onToggleCollapse,
                 onReplyRequested: onReplyRequested,
