@@ -23,6 +23,11 @@ import 'package:frontend/pages/watchlists_page.dart';
 import 'package:frontend/screens/login_screen.dart';
 import 'package:frontend/screens/profile_update_screen.dart';
 import 'package:frontend/services/watchlist_service.dart';
+import 'package:frontend/services/friendship_service.dart';
+import 'package:frontend/bloc/friendship/friendship_bloc.dart';
+import 'package:frontend/bloc/friendship/friendship_event.dart';
+import 'package:frontend/bloc/friendship/friendship_state.dart';
+import 'package:frontend/pages/friends_page.dart';
 
 class ProfilePage extends StatelessWidget {
   final UserResponseDto? viewingUser; // Optional user to view (if null, shows current user's profile)
@@ -48,9 +53,9 @@ class ProfilePage extends StatelessWidget {
                   Text(
                     '',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
-                    ),
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).primaryColor,
+                        ),
                   ),
                   const SizedBox(height: 32),
                   _buildAuthenticatedProfile(context, user: viewingUser),
@@ -58,6 +63,114 @@ class ProfilePage extends StatelessWidget {
                   if (viewingUser is MemberResponseDto) ...[
                     const SizedBox(height: 24),
                     _buildPublicWatchlistsSection(context, viewingUser as MemberResponseDto),
+                    const SizedBox(height: 24),
+                    BlocProvider(
+                      create: (_) => FriendshipBloc(
+                        friendshipService: getIt<FriendshipService>(),
+                      )..add(const LoadFriendshipData()),
+                      child: BlocConsumer<FriendshipBloc, FriendshipState>(
+                        listener: (context, state) {
+                          if (state is FriendshipLoaded && state.lastMessage != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(state.lastMessage!)),
+                            );
+                          }
+                          if (state is FriendshipError) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(state.message)),
+                            );
+                          }
+                        },
+                        builder: (ctx, state) {
+                          final memberId = (viewingUser as MemberResponseDto).id;
+
+                          Widget buildSendButton() => SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  onPressed: () => ctx.read<FriendshipBloc>().add(SendFriendRequest(memberId: memberId)),
+                                  icon: const Icon(Icons.person_add_alt),
+                                  label: const Text('Send Friend Request'),
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.9),
+                                    foregroundColor: Colors.white,
+                                  ),
+                                ),
+                              );
+
+                          if (state is FriendshipLoading || state is FriendshipInitial) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+
+                          if (state is! FriendshipLoaded) {
+                            return buildSendButton();
+                          }
+
+                          final friends = state.friends.any((f) => f.requester.id == memberId || f.addressee.id == memberId);
+                          if (friends) {
+                            return Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: null,
+                                    icon: const Icon(Icons.check),
+                                    label: const Text('Friends'),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: () => ctx.read<FriendshipBloc>().add(RemoveFriend(memberId: memberId)),
+                                    icon: const Icon(Icons.person_remove),
+                                    label: const Text('Remove'),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+
+                          final incoming = state.incoming.any((f) => f.requester.id == memberId);
+                          if (incoming) {
+                            return Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () => ctx.read<FriendshipBloc>().add(AcceptFriendRequest(memberId: memberId)),
+                                    icon: const Icon(Icons.check),
+                                    label: const Text('Accept'),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: () => ctx.read<FriendshipBloc>().add(RejectFriendRequest(memberId: memberId)),
+                                    icon: const Icon(Icons.close),
+                                    label: const Text('Reject'),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+
+                          final outgoing = state.outgoing.any((f) => f.addressee.id == memberId);
+                          if (outgoing) {
+                            return SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: null,
+                                icon: const Icon(Icons.hourglass_bottom),
+                                label: const Text('Request Sent'),
+                              ),
+                            );
+                          }
+
+                          return buildSendButton();
+                        },
+                      ),
+                    ),
                   ],
                 ],
               ),
@@ -336,6 +449,31 @@ class ProfilePage extends StatelessWidget {
                       },
                       icon: const Icon(Icons.playlist_play),
                       label: const Text('My Watchlists'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.9),
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Friends Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (context) => const FriendsPage(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.group),
+                      label: const Text('Friends'),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(

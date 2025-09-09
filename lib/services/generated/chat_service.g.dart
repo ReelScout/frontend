@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of '../search_service.dart';
+part of '../chat_service.dart';
 
 // **************************************************************************
 // RetrofitGenerator
@@ -8,8 +8,8 @@ part of '../search_service.dart';
 
 // ignore_for_file: unnecessary_brace_in_string_interps,no_leading_underscores_for_local_identifiers,unused_element,unnecessary_string_interpolations,unused_element_parameter
 
-class _SearchService implements SearchService {
-  _SearchService(this._dio, {this.baseUrl, this.errorLogger});
+class _ChatService implements ChatService {
+  _ChatService(this._dio, {this.baseUrl, this.errorLogger});
 
   final Dio _dio;
 
@@ -18,25 +18,29 @@ class _SearchService implements SearchService {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<SearchResponseDto> search(String query) async {
+  Future<PageResponseChatMessageDto> getDirectHistory(
+    String username,
+    int page,
+    int size,
+  ) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{r'query': query};
+    final queryParameters = <String, dynamic>{r'page': page, r'size': size};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<SearchResponseDto>(
+    final _options = _setStreamType<PageResponseChatMessageDto>(
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '',
+            '/dm/${username}',
             queryParameters: queryParameters,
             data: _data,
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late SearchResponseDto _value;
+    late PageResponseChatMessageDto _value;
     try {
-      _value = SearchResponseDto.fromJson(_result.data!);
+      _value = PageResponseChatMessageDto.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
@@ -45,27 +49,28 @@ class _SearchService implements SearchService {
   }
 
   @override
-  Future<List<UserResponseDto>> searchMembers(String query) async {
+  Future<List<ConversationResponseDto>> getRecentConversations(int size) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{r'query': query};
+    final queryParameters = <String, dynamic>{r'size': size};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<List<UserResponseDto>>(
+    final _options = _setStreamType<List<ConversationResponseDto>>(
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/members',
+            '/conversations',
             queryParameters: queryParameters,
             data: _data,
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<List<dynamic>>(_options);
-    late List<UserResponseDto> _value;
+    late List<ConversationResponseDto> _value;
     try {
       _value = _result.data!
           .map(
-            (dynamic i) => UserResponseDto.fromJson(i as Map<String, dynamic>),
+            (dynamic i) =>
+                ConversationResponseDto.fromJson(i as Map<String, dynamic>),
           )
           .toList();
     } on Object catch (e, s) {

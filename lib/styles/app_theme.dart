@@ -33,6 +33,21 @@ class AppTheme {
         ),
       ),
 
+      // TabBar theme
+      tabBarTheme: TabBarThemeData(
+        indicatorSize: TabBarIndicatorSize.tab,
+        labelPadding: const EdgeInsets.symmetric(horizontal: 12),
+        labelColor: AppColors.textOnPrimary,
+        unselectedLabelColor: AppColors.textOnPrimary,
+        labelStyle: const TextStyle(fontWeight: FontWeight.w600),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
+        overlayColor: WidgetStatePropertyAll(AppColors.white.withValues(alpha: 0.06)),
+        indicator: BoxDecoration(
+          color: AppColors.white.withValues(alpha: 0.18),
+          borderRadius: BorderRadius.circular(24),
+        ),
+      ),
+
       // Elevated button theme
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

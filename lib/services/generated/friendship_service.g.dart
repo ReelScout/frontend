@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of '../watchlist_service.dart';
+part of '../friendship_service.dart';
 
 // **************************************************************************
 // RetrofitGenerator
@@ -8,8 +8,8 @@ part of '../watchlist_service.dart';
 
 // ignore_for_file: unnecessary_brace_in_string_interps,no_leading_underscores_for_local_identifiers,unused_element,unnecessary_string_interpolations,unused_element_parameter
 
-class _WatchlistService implements WatchlistService {
-  _WatchlistService(this._dio, {this.baseUrl, this.errorLogger});
+class _FriendshipService implements FriendshipService {
+  _FriendshipService(this._dio, {this.baseUrl, this.errorLogger});
 
   final Dio _dio;
 
@@ -18,109 +18,16 @@ class _WatchlistService implements WatchlistService {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<List<WatchlistResponseDto>> getMyWatchlists() async {
-    final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
-    final _headers = <String, dynamic>{};
-    const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<List<WatchlistResponseDto>>(
-      Options(method: 'GET', headers: _headers, extra: _extra)
-          .compose(
-            _dio.options,
-            '/my-watchlists',
-            queryParameters: queryParameters,
-            data: _data,
-          )
-          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
-    );
-    final _result = await _dio.fetch<List<dynamic>>(_options);
-    late List<WatchlistResponseDto> _value;
-    try {
-      _value = _result.data!
-          .map(
-            (dynamic i) =>
-                WatchlistResponseDto.fromJson(i as Map<String, dynamic>),
-          )
-          .toList();
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
-    return _value;
-  }
-
-  @override
-  Future<WatchlistResponseDto> addWatchlist(
-    WatchlistRequestDto watchlist,
-  ) async {
-    final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
-    final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
-    _data.addAll(watchlist.toJson());
-    final _options = _setStreamType<WatchlistResponseDto>(
-      Options(method: 'POST', headers: _headers, extra: _extra)
-          .compose(
-            _dio.options,
-            '/add',
-            queryParameters: queryParameters,
-            data: _data,
-          )
-          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
-    );
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late WatchlistResponseDto _value;
-    try {
-      _value = WatchlistResponseDto.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
-    return _value;
-  }
-
-  @override
-  Future<WatchlistResponseDto> updateWatchlist(
-    int id,
-    WatchlistRequestDto watchlist,
-  ) async {
-    final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
-    final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
-    _data.addAll(watchlist.toJson());
-    final _options = _setStreamType<WatchlistResponseDto>(
-      Options(method: 'PUT', headers: _headers, extra: _extra)
-          .compose(
-            _dio.options,
-            '/update/${id}',
-            queryParameters: queryParameters,
-            data: _data,
-          )
-          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
-    );
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late WatchlistResponseDto _value;
-    try {
-      _value = WatchlistResponseDto.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
-    return _value;
-  }
-
-  @override
-  Future<CustomResponseDto> deleteWatchlist(int id) async {
+  Future<CustomResponseDto> sendFriendRequest(int memberId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<CustomResponseDto>(
-      Options(method: 'DELETE', headers: _headers, extra: _extra)
+      Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/delete/${id}',
+            '/request/${memberId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -138,28 +45,25 @@ class _WatchlistService implements WatchlistService {
   }
 
   @override
-  Future<WatchlistWithContentsDto> addContentToWatchlist(
-    int watchlistId,
-    int contentId,
-  ) async {
+  Future<CustomResponseDto> acceptFriendRequest(int memberId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<WatchlistWithContentsDto>(
+    final _options = _setStreamType<CustomResponseDto>(
       Options(method: 'PATCH', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/${watchlistId}/add-content/${contentId}',
+            '/accept/${memberId}',
             queryParameters: queryParameters,
             data: _data,
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late WatchlistWithContentsDto _value;
+    late CustomResponseDto _value;
     try {
-      _value = WatchlistWithContentsDto.fromJson(_result.data!);
+      _value = CustomResponseDto.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
@@ -168,28 +72,25 @@ class _WatchlistService implements WatchlistService {
   }
 
   @override
-  Future<WatchlistWithContentsDto> removeContentFromWatchlist(
-    int watchlistId,
-    int contentId,
-  ) async {
+  Future<CustomResponseDto> rejectFriendRequest(int memberId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<WatchlistWithContentsDto>(
+    final _options = _setStreamType<CustomResponseDto>(
       Options(method: 'PATCH', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/${watchlistId}/remove-content/${contentId}',
+            '/reject/${memberId}',
             queryParameters: queryParameters,
             data: _data,
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late WatchlistWithContentsDto _value;
+    late CustomResponseDto _value;
     try {
-      _value = WatchlistWithContentsDto.fromJson(_result.data!);
+      _value = CustomResponseDto.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
@@ -198,30 +99,56 @@ class _WatchlistService implements WatchlistService {
   }
 
   @override
-  Future<List<WatchlistResponseDto>> getWatchlistsByContentId(
-    int contentId,
-  ) async {
+  Future<CustomResponseDto> removeFriend(int memberId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<List<WatchlistResponseDto>>(
+    final _options = _setStreamType<CustomResponseDto>(
+      Options(method: 'DELETE', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/remove/${memberId}',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late CustomResponseDto _value;
+    try {
+      _value = CustomResponseDto.fromJson(_result.data!);
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
+  Future<List<FriendshipWithUsersResponseDto>> getFriends() async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<List<FriendshipWithUsersResponseDto>>(
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/by-content/${contentId}',
+            '',
             queryParameters: queryParameters,
             data: _data,
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<List<dynamic>>(_options);
-    late List<WatchlistResponseDto> _value;
+    late List<FriendshipWithUsersResponseDto> _value;
     try {
       _value = _result.data!
           .map(
-            (dynamic i) =>
-                WatchlistResponseDto.fromJson(i as Map<String, dynamic>),
+            (dynamic i) => FriendshipWithUsersResponseDto.fromJson(
+              i as Map<String, dynamic>,
+            ),
           )
           .toList();
     } on Object catch (e, s) {
@@ -232,30 +159,29 @@ class _WatchlistService implements WatchlistService {
   }
 
   @override
-  Future<List<WatchlistResponseDto>> getPublicWatchlistsByMemberId(
-    int memberId,
-  ) async {
+  Future<List<FriendshipWithUsersResponseDto>> getIncomingRequests() async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<List<WatchlistResponseDto>>(
+    final _options = _setStreamType<List<FriendshipWithUsersResponseDto>>(
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/public/${memberId}',
+            '/requests/incoming',
             queryParameters: queryParameters,
             data: _data,
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<List<dynamic>>(_options);
-    late List<WatchlistResponseDto> _value;
+    late List<FriendshipWithUsersResponseDto> _value;
     try {
       _value = _result.data!
           .map(
-            (dynamic i) =>
-                WatchlistResponseDto.fromJson(i as Map<String, dynamic>),
+            (dynamic i) => FriendshipWithUsersResponseDto.fromJson(
+              i as Map<String, dynamic>,
+            ),
           )
           .toList();
     } on Object catch (e, s) {
@@ -266,25 +192,31 @@ class _WatchlistService implements WatchlistService {
   }
 
   @override
-  Future<WatchlistWithContentsDto> getWatchlistById(int id) async {
+  Future<List<FriendshipWithUsersResponseDto>> getOutgoingRequests() async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<WatchlistWithContentsDto>(
+    final _options = _setStreamType<List<FriendshipWithUsersResponseDto>>(
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/${id}',
+            '/requests/outgoing',
             queryParameters: queryParameters,
             data: _data,
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late WatchlistWithContentsDto _value;
+    final _result = await _dio.fetch<List<dynamic>>(_options);
+    late List<FriendshipWithUsersResponseDto> _value;
     try {
-      _value = WatchlistWithContentsDto.fromJson(_result.data!);
+      _value = _result.data!
+          .map(
+            (dynamic i) => FriendshipWithUsersResponseDto.fromJson(
+              i as Map<String, dynamic>,
+            ),
+          )
+          .toList();
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
