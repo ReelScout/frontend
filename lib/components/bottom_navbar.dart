@@ -31,6 +31,10 @@ class BottomNavbar extends StatelessWidget {
           label: 'Search',
         ),
         BottomNavigationBarItem(
+          icon: Icon(Icons.chat_bubble_outline),
+          label: 'Chat',
+        ),
+        BottomNavigationBarItem(
           icon: Icon(Icons.person),
           label: 'Profile',
         ),

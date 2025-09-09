@@ -6,7 +6,10 @@ import 'package:frontend/services/user_service.dart';
 import 'package:frontend/services/watchlist_service.dart';
 import 'package:frontend/services/forum_service.dart';
 import 'package:frontend/services/friendship_service.dart';
+import 'package:frontend/services/chat_service.dart';
+import 'package:frontend/services/chat_realtime_service.dart';
 import 'package:injectable/injectable.dart';
+import 'package:frontend/services/token_service.dart';
 
 @module
 abstract class ServiceModule {
@@ -30,4 +33,12 @@ abstract class ServiceModule {
 
   @singleton
   FriendshipService friendshipService(Dio dio) => FriendshipService(dio, baseUrl: "${dio.options.baseUrl}/user/friends");
+
+  @singleton
+  ChatService chatService(Dio dio) => ChatService(dio, baseUrl: "${dio.options.baseUrl}/chat");
+
+  // Realtime chat service needs API origin to derive WS endpoint
+  @singleton
+  ChatRealtimeService chatRealtimeService(TokenService tokenService, Dio dio) =>
+      ChatRealtimeService(tokenService: tokenService, apiBaseUrl: dio.options.baseUrl);
 }
