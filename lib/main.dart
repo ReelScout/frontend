@@ -21,8 +21,10 @@ import 'package:frontend/styles/app_theme.dart';
 import 'package:frontend/bloc/auth/auth_bloc.dart';
 import 'package:frontend/bloc/auth/auth_event.dart';
 import 'package:frontend/bloc/auth/auth_state.dart';
-import 'package:frontend/services/chat_realtime_service.dart';
+import 'package:frontend/websocket/chat_realtime_service.dart';
+import 'package:frontend/websocket/content_realtime_service.dart';
 import 'package:frontend/config/chat_event_bus.dart';
+import 'package:frontend/config/content_event_bus.dart';
 import 'package:frontend/config/unread_badge.dart';
 
 void main() {
@@ -92,8 +94,10 @@ class ReelScoutApp extends StatelessWidget {
           final realtime = getIt<ChatRealtimeService>();
           if (state is AuthSuccess) {
             await chatEventBus.attach(realtime); // connects + subscribes globally
+            await contentEventBus.attach(getIt<ContentRealtimeService>());
           } else if (state is AuthLoggedOut) {
             chatEventBus.detach();
+            contentEventBus.detach();
             realtime.disconnect();
             unreadBadge.clear();
           }

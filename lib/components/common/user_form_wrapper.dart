@@ -233,6 +233,7 @@ class UserFormWrapper extends HookWidget {
 
     return BlocListener<ContentBloc, ContentState>(
       listener: (context, state) {
+        if (!context.mounted) return;
         if (state is GenresLoaded) {
           genres.value = state.genres;
         } else if (state is GenresError) {

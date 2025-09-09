@@ -31,6 +31,7 @@ class ForumPage extends HookWidget {
     return BlocListener<ThreadsBloc, ThreadsState>(
         listenWhen: (prev, next) => next is ThreadsLoaded && next.currentOperation != null,
         listener: (context, state) {
+          if (!context.mounted) return;
           if (state is ThreadsLoaded && state.currentOperation != null) {
             final op = state.currentOperation!;
             if (!op.isLoading && op.message != null) {

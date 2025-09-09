@@ -24,6 +24,7 @@ class WatchlistDialog extends HookWidget {
 
     return BlocConsumer<WatchlistBloc, WatchlistState>(
       listener: (context, state) {
+        if (!context.mounted) return;
         if (state is WatchlistLoaded && state.currentOperation != null) {
           final operation = state.currentOperation!;
           

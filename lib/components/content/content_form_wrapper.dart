@@ -213,6 +213,7 @@ class ContentFormWrapper extends HookWidget {
 
     return BlocListener<ContentBloc, ContentState>(
       listener: (context, state) {
+        if (!context.mounted) return;
         if (state is ContentTypesLoaded) {
           contentTypes.value = state.contentTypes;
         } else if (state is ContentTypesError) {

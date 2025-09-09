@@ -33,6 +33,7 @@ class LoginScreen extends HookWidget {
 
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
+        if (!context.mounted) return;
         if (state is AuthSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

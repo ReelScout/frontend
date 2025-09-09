@@ -47,6 +47,7 @@ class _FriendsView extends HookWidget {
         ),
         body: BlocConsumer<FriendshipBloc, FriendshipState>(
           listener: (context, state) {
+            if (!context.mounted) return;
             if (state is FriendshipLoaded && state.lastMessage != null) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(state.lastMessage!)),

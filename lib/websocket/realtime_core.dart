@@ -1,28 +1,28 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 
-import 'package:frontend/dto/response/chat_message_response_dto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:frontend/services/token_service.dart';
-// Registered via ServiceModule; no class-level injectable annotation needed.
 import 'package:stomp_dart_client/stomp.dart';
 import 'package:stomp_dart_client/stomp_config.dart';
 import 'package:stomp_dart_client/stomp_frame.dart';
 
-class ChatRealtimeService {
-  ChatRealtimeService({
+/// Core STOMP/WebSocket client responsible for:
+/// - Managing a single shared connection
+/// - Handling auth headers
+/// - Re-subscribing generic destinations on reconnect
+/// - Exposing generic subscribe/send helpers
+class RealtimeCore {
+  RealtimeCore({
     required this.tokenService,
     required this.apiBaseUrl,
   });
 
   final TokenService tokenService;
-  // Example: http://localhost:8080/api/v1
-  final String apiBaseUrl;
+  final String apiBaseUrl; // e.g., http://localhost:8080/api/v1
 
   StompClient? _client;
-  StreamController<ChatMessageResponseDto>? _dmController;
-  bool _dmSubscribed = false;
-  bool _wantDm = false;
+  final List<_RawSub> _rawSubs = <_RawSub>[];
 
   bool get isConnected => _client?.connected == true;
 
@@ -67,9 +67,7 @@ class ChatRealtimeService {
             },
             onWebSocketError: (dynamic err) => onError?.call(err),
             onStompError: (StompFrame frame) => onError?.call(Exception('STOMP error: ${frame.body}')),
-            onDisconnect: (frame) {
-              _dmSubscribed = false;
-            },
+            onDisconnect: (frame) {},
             reconnectDelay: const Duration(milliseconds: 4000),
           )
         : StompConfig(
@@ -82,72 +80,52 @@ class ChatRealtimeService {
             },
             onWebSocketError: (dynamic err) => onError?.call(err),
             onStompError: (StompFrame frame) => onError?.call(Exception('STOMP error: ${frame.body}')),
-            onDisconnect: (frame) {
-              _dmSubscribed = false;
-            },
+            onDisconnect: (frame) {},
             reconnectDelay: const Duration(milliseconds: 4000),
           );
 
     _client = StompClient(config: config);
-
     _client!.activate();
   }
 
   void disconnect() {
     _client?.deactivate();
     _client = null;
-    _dmSubscribed = false;
-    // Do not close controllers to allow reconnection; callers can manage lifecycle
   }
 
-  // Subscribe to personal direct-message queue
-  Stream<ChatMessageResponseDto> subscribeDirect() {
-    _dmController ??= StreamController.broadcast();
-    final controller = _dmController!;
-    _wantDm = true;
-
-    if (isConnected && !_dmSubscribed) {
-      _client!.subscribe(
-        destination: '/user/queue/dm',
-        callback: (StompFrame frame) {
-          if (frame.body != null) {
-            final data = jsonDecode(frame.body!);
-            controller.add(ChatMessageResponseDto.fromJson(Map<String, dynamic>.from(data)));
-          }
-        },
-      );
-      _dmSubscribed = true;
+  // Subscribe to a destination and receive raw JSON map messages.
+  Stream<Map<String, dynamic>> subscribeRaw(String destination) {
+    final controller = StreamController<Map<String, dynamic>>.broadcast();
+    void cb(StompFrame frame) {
+      if (frame.body != null && !controller.isClosed) {
+        final data = jsonDecode(frame.body!);
+        controller.add(Map<String, dynamic>.from(data));
+      }
     }
-
+    _rawSubs.add(_RawSub(destination, cb));
+    if (isConnected) {
+      _client!.subscribe(destination: destination, callback: cb);
+    }
     return controller.stream;
   }
 
-  // Send direct message to a username
-  void sendDirect(String username, String content) {
+  // Generic send helper, body can be a Map or String
+  void send(String destination, Object body) {
     if (!isConnected) return;
-    // Backend expects recipient in payload at destination '/app/dm'
-    _client!.send(
-      destination: '/app/dm',
-      body: jsonEncode({'recipient': username, 'content': content}),
-    );
+    final payload = body is String ? body : jsonEncode(body);
+    _client!.send(destination: destination, body: payload);
   }
 
   void _resubscribeAll() {
-    if (_wantDm && !_dmSubscribed) {
-      // Subscribe to personal queue
-      _dmController ??= StreamController.broadcast();
-      _client!.subscribe(
-        destination: '/user/queue/dm',
-        callback: (StompFrame frame) {
-          if (frame.body != null && _dmController != null) {
-            final data = jsonDecode(frame.body!);
-            _dmController!.add(ChatMessageResponseDto.fromJson(Map<String, dynamic>.from(data)));
-          }
-        },
-      );
-      _dmSubscribed = true;
+    for (final s in _rawSubs) {
+      _client!.subscribe(destination: s.destination, callback: s.callback);
     }
-
-    // No other subscriptions (rooms removed)
   }
 }
+
+class _RawSub {
+  final String destination;
+  final void Function(StompFrame frame) callback;
+  _RawSub(this.destination, this.callback);
+}
+
