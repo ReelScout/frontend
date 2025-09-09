@@ -20,8 +20,9 @@ class ChatRealtimeService {
   final String apiBaseUrl;
 
   StompClient? _client;
-  final _roomControllers = <String, StreamController<ChatMessageResponseDto>>{};
   StreamController<ChatMessageResponseDto>? _dmController;
+  bool _dmSubscribed = false;
+  bool _wantDm = false;
 
   bool get isConnected => _client?.connected == true;
 
@@ -60,20 +61,30 @@ class ChatRealtimeService {
             url: _httpUrl,
             stompConnectHeaders: headers,
             webSocketConnectHeaders: headers,
-            onConnect: (StompFrame frame) => onConnected?.call(),
+            onConnect: (StompFrame frame) {
+              _resubscribeAll();
+              onConnected?.call();
+            },
             onWebSocketError: (dynamic err) => onError?.call(err),
             onStompError: (StompFrame frame) => onError?.call(Exception('STOMP error: ${frame.body}')),
-            onDisconnect: (frame) {},
+            onDisconnect: (frame) {
+              _dmSubscribed = false;
+            },
             reconnectDelay: const Duration(milliseconds: 4000),
           )
         : StompConfig(
             url: _wsUrl,
             stompConnectHeaders: headers,
             webSocketConnectHeaders: headers,
-            onConnect: (StompFrame frame) => onConnected?.call(),
+            onConnect: (StompFrame frame) {
+              _resubscribeAll();
+              onConnected?.call();
+            },
             onWebSocketError: (dynamic err) => onError?.call(err),
             onStompError: (StompFrame frame) => onError?.call(Exception('STOMP error: ${frame.body}')),
-            onDisconnect: (frame) {},
+            onDisconnect: (frame) {
+              _dmSubscribed = false;
+            },
             reconnectDelay: const Duration(milliseconds: 4000),
           );
 
@@ -85,35 +96,17 @@ class ChatRealtimeService {
   void disconnect() {
     _client?.deactivate();
     _client = null;
+    _dmSubscribed = false;
     // Do not close controllers to allow reconnection; callers can manage lifecycle
-  }
-
-  // Subscribe to a group chat room
-  Stream<ChatMessageResponseDto> subscribeRoom(String roomId) {
-    final topic = '/topic/chat.$roomId';
-    final controller = _roomControllers.putIfAbsent(roomId, () => StreamController.broadcast());
-
-    if (isConnected) {
-      _client!.subscribe(
-        destination: topic,
-        callback: (StompFrame frame) {
-          if (frame.body != null) {
-            final data = jsonDecode(frame.body!);
-            controller.add(ChatMessageResponseDto.fromJson(Map<String, dynamic>.from(data)));
-          }
-        },
-      );
-    }
-
-    return controller.stream;
   }
 
   // Subscribe to personal direct-message queue
   Stream<ChatMessageResponseDto> subscribeDirect() {
     _dmController ??= StreamController.broadcast();
     final controller = _dmController!;
+    _wantDm = true;
 
-    if (isConnected) {
+    if (isConnected && !_dmSubscribed) {
       _client!.subscribe(
         destination: '/user/queue/dm',
         callback: (StompFrame frame) {
@@ -123,6 +116,7 @@ class ChatRealtimeService {
           }
         },
       );
+      _dmSubscribed = true;
     }
 
     return controller.stream;
@@ -138,5 +132,26 @@ class ChatRealtimeService {
   void sendDirect(String username, String content) {
     if (!isConnected) return;
     _client!.send(destination: '/app/dm/$username', body: jsonEncode({'content': content}));
+  }
+
+  void _resubscribeAll() {
+    if (_wantDm && !_dmSubscribed) {
+      // Subscribe to personal queue
+      if (_dmController == null) {
+        _dmController = StreamController.broadcast();
+      }
+      _client!.subscribe(
+        destination: '/user/queue/dm',
+        callback: (StompFrame frame) {
+          if (frame.body != null && _dmController != null) {
+            final data = jsonDecode(frame.body!);
+            _dmController!.add(ChatMessageResponseDto.fromJson(Map<String, dynamic>.from(data)));
+          }
+        },
+      );
+      _dmSubscribed = true;
+    }
+
+    // no-op for rooms (feature removed)
   }
 }

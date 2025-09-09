@@ -20,6 +20,10 @@ import 'package:frontend/services/watchlist_service.dart';
 import 'package:frontend/styles/app_theme.dart';
 import 'package:frontend/bloc/auth/auth_bloc.dart';
 import 'package:frontend/bloc/auth/auth_event.dart';
+import 'package:frontend/bloc/auth/auth_state.dart';
+import 'package:frontend/services/chat_realtime_service.dart';
+import 'package:frontend/config/chat_event_bus.dart';
+import 'package:frontend/config/unread_badge.dart';
 
 void main() {
   configureDependencies();
@@ -82,11 +86,24 @@ class ReelScoutApp extends StatelessWidget {
           ),
         ),
       ],
-      child: MaterialApp(
-        title: 'ReelScout',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        home: const HomeScreen(),
+      child: BlocListener<AuthBloc, AuthState>(
+        listenWhen: (prev, curr) => prev.runtimeType != curr.runtimeType,
+        listener: (context, state) async {
+          final realtime = getIt<ChatRealtimeService>();
+          if (state is AuthSuccess) {
+            await chatEventBus.attach(realtime); // connects + subscribes globally
+          } else if (state is AuthLoggedOut) {
+            chatEventBus.detach();
+            realtime.disconnect();
+            unreadBadge.clear();
+          }
+        },
+        child: MaterialApp(
+          title: 'ReelScout',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          home: const HomeScreen(),
+        ),
       ),
     );
   }

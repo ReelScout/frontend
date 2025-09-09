@@ -7,7 +7,7 @@ import 'package:frontend/bloc/navigation/navigation_state.dart';
 import 'package:frontend/components/bottom_navbar.dart';
 import 'package:frontend/pages/home_page.dart';
 import 'package:frontend/pages/profile_page.dart';
-import 'package:frontend/pages/chat_page.dart';
+import 'package:frontend/pages/chats_list_page.dart';
 import 'package:frontend/styles/app_colors.dart';
 import 'package:frontend/screens/search_screen.dart';
 
@@ -19,7 +19,7 @@ class HomeScreen extends HookWidget {
     final screens = useMemoized(() => const [
       HomePage(),
       SearchScreen(),
-      ChatPage(roomId: 'general', title: 'General Chat'),
+      ChatsListPage(),
       ProfilePage(),
     ]);
 

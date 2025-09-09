@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/styles/app_colors.dart';
+import 'package:frontend/config/unread_badge.dart';
 
 class BottomNavbar extends StatelessWidget {
   final int selectedIndex;
@@ -21,7 +22,7 @@ class BottomNavbar extends StatelessWidget {
       unselectedItemColor: AppColors.textSecondary,
       backgroundColor: AppColors.white,
       elevation: 8,
-      items: const [
+      items: [
         BottomNavigationBarItem(
           icon: Icon(Icons.home),
           label: 'Home',
@@ -31,7 +32,30 @@ class BottomNavbar extends StatelessWidget {
           label: 'Search',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.chat_bubble_outline),
+          icon: ValueListenableBuilder<bool>(
+            valueListenable: unreadBadge.hasUnread,
+            builder: (context, hasUnread, child) {
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.chat_bubble_outline),
+                  if (hasUnread)
+                    Positioned(
+                      right: -1,
+                      top: -1,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
           label: 'Chat',
         ),
         BottomNavigationBarItem(

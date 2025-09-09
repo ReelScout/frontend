@@ -18,37 +18,6 @@ class _ChatService implements ChatService {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<PageResponseChatMessageDto> getRoomHistory(
-    String roomId,
-    int page,
-    int size,
-  ) async {
-    final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{r'page': page, r'size': size};
-    final _headers = <String, dynamic>{};
-    const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<PageResponseChatMessageDto>(
-      Options(method: 'GET', headers: _headers, extra: _extra)
-          .compose(
-            _dio.options,
-            '/room/${roomId}',
-            queryParameters: queryParameters,
-            data: _data,
-          )
-          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
-    );
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late PageResponseChatMessageDto _value;
-    try {
-      _value = PageResponseChatMessageDto.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
-    return _value;
-  }
-
-  @override
   Future<PageResponseChatMessageDto> getDirectHistory(
     String username,
     int page,
@@ -80,25 +49,30 @@ class _ChatService implements ChatService {
   }
 
   @override
-  Future<String> getDirectRoomId(String username) async {
+  Future<List<ConversationResponseDto>> getRecentConversations(int size) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{r'size': size};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<String>(
+    final _options = _setStreamType<List<ConversationResponseDto>>(
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/dm/${username}/room',
+            '/conversations',
             queryParameters: queryParameters,
             data: _data,
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    final _result = await _dio.fetch<String>(_options);
-    late String _value;
+    final _result = await _dio.fetch<List<dynamic>>(_options);
+    late List<ConversationResponseDto> _value;
     try {
-      _value = _result.data!;
+      _value = _result.data!
+          .map(
+            (dynamic i) =>
+                ConversationResponseDto.fromJson(i as Map<String, dynamic>),
+          )
+          .toList();
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
