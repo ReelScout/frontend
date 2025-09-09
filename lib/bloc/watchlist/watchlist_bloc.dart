@@ -312,7 +312,7 @@ class WatchlistBloc extends Bloc<WatchlistEvent, WatchlistState> {
     ));
 
     try {
-      final response = await _watchlistService.addContentToWatchlist(
+      await _watchlistService.addContentToWatchlist(
         event.watchlistId,
         event.contentId,
       );
@@ -332,9 +332,7 @@ class WatchlistBloc extends Bloc<WatchlistEvent, WatchlistState> {
             type: WatchlistOperationType.addContent,
             watchlistId: event.watchlistId,
             watchlistName: watchlist.name,
-            message: response.message.isNotEmpty
-                ? response.message
-                : 'Content added to "${watchlist.name}" successfully',
+            message: 'Content added to "${watchlist.name}" successfully',
           ),
           watchlistsWithContent: updatedWatchlistsWithContent,
         ));
@@ -372,7 +370,7 @@ class WatchlistBloc extends Bloc<WatchlistEvent, WatchlistState> {
     );
 
     try {
-      final response = await _watchlistService.removeContentFromWatchlist(
+      await _watchlistService.removeContentFromWatchlist(
         event.watchlistId,
         event.contentId,
       );
@@ -389,9 +387,7 @@ class WatchlistBloc extends Bloc<WatchlistEvent, WatchlistState> {
             type: WatchlistOperationType.removeContent,
             watchlistId: event.watchlistId,
             watchlistName: watchlist.name,
-            message: response.message.isNotEmpty
-                ? response.message
-                : 'Content removed from "${watchlist.name}" successfully',
+            message: 'Content removed from "${watchlist.name}" successfully',
           ),
           watchlistsWithContent: updatedWatchlistsWithContent,
         ));

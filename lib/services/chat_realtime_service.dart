@@ -122,24 +122,20 @@ class ChatRealtimeService {
     return controller.stream;
   }
 
-  // Send message to group room
-  void sendToRoom(String roomId, String content) {
-    if (!isConnected) return;
-    _client!.send(destination: '/app/chat/$roomId', body: jsonEncode({'content': content}));
-  }
-
   // Send direct message to a username
   void sendDirect(String username, String content) {
     if (!isConnected) return;
-    _client!.send(destination: '/app/dm/$username', body: jsonEncode({'content': content}));
+    // Backend expects recipient in payload at destination '/app/dm'
+    _client!.send(
+      destination: '/app/dm',
+      body: jsonEncode({'recipient': username, 'content': content}),
+    );
   }
 
   void _resubscribeAll() {
     if (_wantDm && !_dmSubscribed) {
       // Subscribe to personal queue
-      if (_dmController == null) {
-        _dmController = StreamController.broadcast();
-      }
+      _dmController ??= StreamController.broadcast();
       _client!.subscribe(
         destination: '/user/queue/dm',
         callback: (StompFrame frame) {
@@ -152,6 +148,6 @@ class ChatRealtimeService {
       _dmSubscribed = true;
     }
 
-    // no-op for rooms (feature removed)
+    // No other subscriptions (rooms removed)
   }
 }

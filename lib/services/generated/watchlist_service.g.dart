@@ -138,7 +138,7 @@ class _WatchlistService implements WatchlistService {
   }
 
   @override
-  Future<CustomResponseDto> addContentToWatchlist(
+  Future<WatchlistWithContentsDto> addContentToWatchlist(
     int watchlistId,
     int contentId,
   ) async {
@@ -146,7 +146,7 @@ class _WatchlistService implements WatchlistService {
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<CustomResponseDto>(
+    final _options = _setStreamType<WatchlistWithContentsDto>(
       Options(method: 'PATCH', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -157,9 +157,9 @@ class _WatchlistService implements WatchlistService {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late CustomResponseDto _value;
+    late WatchlistWithContentsDto _value;
     try {
-      _value = CustomResponseDto.fromJson(_result.data!);
+      _value = WatchlistWithContentsDto.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
@@ -168,7 +168,7 @@ class _WatchlistService implements WatchlistService {
   }
 
   @override
-  Future<CustomResponseDto> removeContentFromWatchlist(
+  Future<WatchlistWithContentsDto> removeContentFromWatchlist(
     int watchlistId,
     int contentId,
   ) async {
@@ -176,7 +176,7 @@ class _WatchlistService implements WatchlistService {
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<CustomResponseDto>(
+    final _options = _setStreamType<WatchlistWithContentsDto>(
       Options(method: 'PATCH', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -187,9 +187,9 @@ class _WatchlistService implements WatchlistService {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late CustomResponseDto _value;
+    late WatchlistWithContentsDto _value;
     try {
-      _value = CustomResponseDto.fromJson(_result.data!);
+      _value = WatchlistWithContentsDto.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;

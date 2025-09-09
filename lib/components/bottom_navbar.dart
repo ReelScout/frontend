@@ -23,11 +23,11 @@ class BottomNavbar extends StatelessWidget {
       backgroundColor: AppColors.white,
       elevation: 8,
       items: [
-        BottomNavigationBarItem(
+        const BottomNavigationBarItem(
           icon: Icon(Icons.home),
           label: 'Home',
         ),
-        BottomNavigationBarItem(
+        const BottomNavigationBarItem(
           icon: Icon(Icons.search),
           label: 'Search',
         ),
@@ -58,7 +58,7 @@ class BottomNavbar extends StatelessWidget {
           ),
           label: 'Chat',
         ),
-        BottomNavigationBarItem(
+        const BottomNavigationBarItem(
           icon: Icon(Icons.person),
           label: 'Profile',
         ),

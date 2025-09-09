@@ -5,16 +5,16 @@ part '../generated/response/chat_message_response_dto.g.dart';
 @JsonSerializable()
 class ChatMessageResponseDto {
   ChatMessageResponseDto({
-    required this.roomId,
+    this.conversationId,
     required this.sender,
     this.recipient,
     required this.content,
     required this.timestamp,
   });
 
-  final String roomId;
+  final String? conversationId; // e.g., dm:<a>-<b> (optional from backend)
   final String sender;
-  final String? recipient; // null for room messages
+  final String? recipient; // Direct messages: recipient is the peer username
   final String content;
   final DateTime timestamp;
 
@@ -23,4 +23,3 @@ class ChatMessageResponseDto {
 
   Map<String, dynamic> toJson() => _$ChatMessageResponseDtoToJson(this);
 }
-

@@ -17,13 +17,21 @@ class PageResponseChatMessageDto {
     required this.empty,
   });
 
+  @JsonKey(defaultValue: [])
   final List<ChatMessageResponseDto> content;
+  @JsonKey(defaultValue: 0)
   final int totalElements;
+  @JsonKey(defaultValue: 0)
   final int totalPages;
+  @JsonKey(defaultValue: 0)
   final int size;
+  @JsonKey(defaultValue: 0)
   final int number;
+  @JsonKey(defaultValue: false)
   final bool first;
+  @JsonKey(defaultValue: false)
   final bool last;
+  @JsonKey(defaultValue: false)
   final bool empty;
 
   factory PageResponseChatMessageDto.fromJson(Map<String, dynamic> json) =>
@@ -31,4 +39,3 @@ class PageResponseChatMessageDto {
 
   Map<String, dynamic> toJson() => _$PageResponseChatMessageDtoToJson(this);
 }
-

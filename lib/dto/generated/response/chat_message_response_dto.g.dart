@@ -9,7 +9,7 @@ part of '../../response/chat_message_response_dto.dart';
 ChatMessageResponseDto _$ChatMessageResponseDtoFromJson(
   Map<String, dynamic> json,
 ) => ChatMessageResponseDto(
-  roomId: json['roomId'] as String,
+  conversationId: json['conversationId'] as String?,
   sender: json['sender'] as String,
   recipient: json['recipient'] as String?,
   content: json['content'] as String,
@@ -19,7 +19,7 @@ ChatMessageResponseDto _$ChatMessageResponseDtoFromJson(
 Map<String, dynamic> _$ChatMessageResponseDtoToJson(
   ChatMessageResponseDto instance,
 ) => <String, dynamic>{
-  'roomId': instance.roomId,
+  'conversationId': instance.conversationId,
   'sender': instance.sender,
   'recipient': instance.recipient,
   'content': instance.content,

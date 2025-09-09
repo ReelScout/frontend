@@ -5,7 +5,6 @@ import 'package:frontend/config/injection_container.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend/bloc/user_profile/user_profile_bloc.dart';
 import 'package:frontend/bloc/user_profile/user_profile_state.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend/bloc/navigation/navigation_bloc.dart';
 import 'package:frontend/bloc/navigation/navigation_state.dart';
 import 'package:frontend/dto/response/friendship_with_users_response_dto.dart';
@@ -77,8 +76,9 @@ class _ChatsListPageState extends State<ChatsListPage> {
   }
 
   void _onRealtimeMessage(ChatMessageResponseDto e) {
-    if (e.recipient == null) return; // not a DM event
-    String? me = _myUsername;
+    // Ignore malformed events (DMs should always include recipient)
+    if (e.recipient == null) return;
+    final me = _myUsername;
     // Fallback: infer counterpart if my username isn't loaded yet
     String counterpart;
     if (me == null) {
@@ -100,8 +100,6 @@ class _ChatsListPageState extends State<ChatsListPage> {
     setState(() {
       final idx = _conversations.indexWhere((c) => c.counterpartUsername == counterpart);
       final updated = ConversationResponseDto(
-        roomId: e.roomId,
-        type: 'DM',
         counterpartUsername: counterpart,
         lastMessageSender: e.sender,
         lastMessageContent: e.content,
@@ -192,7 +190,7 @@ class _ChatsListPageState extends State<ChatsListPage> {
         _unreadByUser[_activePeer!] = 0;
       });
       _updateGlobalUnread();
-      await Navigator.of(context).push(MaterialPageRoute(
+      await Navigator.of(context).push(MaterialPageRoute<void>(
         builder: (_) => DmChatPage(peerUsername: selected.username),
       ));
       if (!mounted) return;
@@ -208,8 +206,6 @@ class _ChatsListPageState extends State<ChatsListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final profileState = context.read<UserProfileBloc>().state;
-    final myId = profileState is UserProfileLoaded ? profileState.user.id : null;
     return BlocListener<NavigationBloc, NavigationState>(
       listenWhen: (prev, curr) => prev.selectedIndex != curr.selectedIndex,
       listener: (context, nav) {
@@ -275,7 +271,7 @@ class _ChatsListPageState extends State<ChatsListPage> {
                                    });
                                    _updateGlobalUnread();
                                    await Navigator.of(context).push(
-                                     MaterialPageRoute(
+                                     MaterialPageRoute<void>(
                                        builder: (_) => DmChatPage(peerUsername: c.counterpartUsername),
                                      ),
                                    );

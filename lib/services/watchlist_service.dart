@@ -24,10 +24,10 @@ abstract class WatchlistService {
   Future<CustomResponseDto> deleteWatchlist(@Path() int id);
 
   @PATCH('/{watchlistId}/add-content/{contentId}')
-  Future<CustomResponseDto> addContentToWatchlist(@Path() int watchlistId, @Path() int contentId);
+  Future<WatchlistWithContentsDto> addContentToWatchlist(@Path() int watchlistId, @Path() int contentId);
 
   @PATCH('/{watchlistId}/remove-content/{contentId}')
-  Future<CustomResponseDto> removeContentFromWatchlist(@Path() int watchlistId, @Path() int contentId);
+  Future<WatchlistWithContentsDto> removeContentFromWatchlist(@Path() int watchlistId, @Path() int contentId);
 
   @GET('/by-content/{contentId}')
   Future<List<WatchlistResponseDto>> getWatchlistsByContentId(@Path() int contentId);
