@@ -15,6 +15,8 @@ import 'package:frontend/bloc/user_profile/user_profile_bloc.dart';
 import 'package:frontend/bloc/user_profile/user_profile_event.dart';
 import 'package:frontend/bloc/user_profile/user_profile_state.dart';
 import 'package:frontend/model/role.dart';
+import 'package:frontend/services/search_service.dart';
+import 'package:frontend/config/injection_container.dart';
 
 class ForumPage extends HookWidget {
   const ForumPage({super.key, required this.content});
@@ -25,6 +27,9 @@ class ForumPage extends HookWidget {
     final titleController = useTextEditingController();
     final bodyController = useTextEditingController();
     final formKey = useMemoized(() => GlobalKey<FormState>());
+    // Cache for creator verification status across rebuilds
+    final verifiedMap = useState<Map<String, bool>>({});
+    final fetching = useState<Set<String>>({});
 
     // Ensure threads are loaded when entering the page
     useEffect(() {
@@ -178,6 +183,35 @@ class ForumPage extends HookWidget {
               }
               if (state is ThreadsLoaded) {
                 final threads = state.threads;
+                // After build, fetch missing usernames' roles using SearchService
+                final names = threads.map((t) => t.createdByUsername).toSet();
+                final missing = names
+                    .where((n) => !(verifiedMap.value.containsKey(n) || fetching.value.contains(n)))
+                    .toList();
+                if (missing.isNotEmpty) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) async {
+                    final service = getIt<SearchService>();
+                    fetching.value = {...fetching.value, ...missing};
+                    final updated = Map<String, bool>.from(verifiedMap.value);
+                    for (final name in missing) {
+                      try {
+                        final results = await service.searchMembers(name);
+                        if (results.isNotEmpty) {
+                          final u = results.firstWhere(
+                            (e) => e.username.toLowerCase() == name.toLowerCase(),
+                            orElse: () => results.first,
+                          );
+                          updated[name] = (u.role == Role.verifiedMember);
+                        }
+                      } catch (_) {
+                        // ignore errors; leave as unknown
+                      }
+                    }
+                    verifiedMap.value = updated;
+                    final newFetching = {...fetching.value}..removeAll(missing);
+                    fetching.value = newFetching;
+                  });
+                }
                 if (threads.isEmpty) {
                   return ListView(children: const [
                     SizedBox(height: 120),
@@ -199,8 +233,34 @@ class ForumPage extends HookWidget {
                       return Card(
                         child: ListTile(
                           title: Text(t.title),
-                          subtitle: Text(
-                            'by ${t.createdByUsername} • ${t.postCount} posts • ${timeAgo(t.updatedAt)}',
+                          subtitle: Row(
+                            children: [
+                              const Text('by ', style: TextStyle(color: Colors.grey)),
+                              Flexible(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        t.createdByUsername,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(color: Colors.grey),
+                                      ),
+                                    ),
+                                    if (verifiedMap.value[t.createdByUsername] == true) ...[
+                                      const SizedBox(width: 4),
+                                      Icon(
+                                        Icons.verified,
+                                        size: 14,
+                                        color: Theme.of(context).colorScheme.primary,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text('• ${t.postCount} posts • ${timeAgo(t.updatedAt)}'),
+                            ],
                           ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
