@@ -22,3 +22,10 @@ class CreatePost extends PostsEvent {
   List<Object?> get props => [threadId, body, parentId];
 }
 
+class ReportPost extends PostsEvent {
+  const ReportPost({required this.postId, required this.reason});
+  final int postId;
+  final String reason;
+  @override
+  List<Object?> get props => [postId, reason];
+}

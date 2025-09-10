@@ -173,7 +173,7 @@ class _DmChatPageState extends State<DmChatPage> {
                         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: isMine ? Theme.of(context).primaryColor.withOpacity(0.1) : Colors.grey.shade200,
+                          color: isMine ? Theme.of(context).primaryColor.withValues(alpha: 0.1) : Colors.grey.shade200,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Column(
@@ -216,7 +216,7 @@ class _DmChatPageState extends State<DmChatPage> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),

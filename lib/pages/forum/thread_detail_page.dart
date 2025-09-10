@@ -34,6 +34,72 @@ class ThreadDetailPage extends HookWidget {
       return null;
     }, [threadId]);
 
+    Future<void> promptReport(int postId) async {
+      final authState = context.read<AuthBloc>().state;
+      if (authState is! AuthSuccess) {
+        final go = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Login required'),
+            content: const Text('You need to login to report a post.'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+              FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Login')),
+            ],
+          ),
+        );
+        if (!context.mounted) return;
+        if (go == true) {
+          await Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+          );
+        }
+        if (!context.mounted) return;
+        if (context.read<AuthBloc>().state is! AuthSuccess) return;
+      }
+
+      final controller = TextEditingController();
+      final formKey = GlobalKey<FormState>();
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Report post'),
+          content: Form(
+            key: formKey,
+            child: TextFormField(
+              controller: controller,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                labelText: 'Reason',
+                hintText: 'Why is this inappropriate?',
+              ),
+              validator: (v) => (v == null || v.trim().isEmpty) ? 'Reason is required' : null,
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+            BlocBuilder<PostsBloc, PostsState>(
+              builder: (context, state) {
+                final isLoading = state is PostsLoaded && state.currentOperation?.isLoading == true;
+                return FilledButton(
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
+                          context.read<PostsBloc>().add(ReportPost(postId: postId, reason: controller.text.trim()));
+                          Navigator.of(ctx).pop();
+                        },
+                  child: isLoading
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Send'),
+                );
+              },
+            ),
+          ],
+        ),
+      );
+    }
+
     return BlocListener<PostsBloc, PostsState>(
         listenWhen: (p, n) => n is PostsLoaded && n.currentOperation != null,
         listener: (context, state) {
@@ -170,6 +236,7 @@ class ThreadDetailPage extends HookWidget {
                                       }
                                       await _openComposerBottomSheet(context, threadId: threadId, parentId: postId, hint: 'Replying to @$author');
                                     },
+                                    onReportRequested: promptReport,
                                   ))
                               .toList(),
                         ),
@@ -225,6 +292,7 @@ class _PostNodeWidget extends StatelessWidget {
     required this.collapsed,
     required this.onToggleCollapse,
     required this.onReplyRequested,
+    required this.onReportRequested,
   });
 
   final _PostNode node;
@@ -235,6 +303,7 @@ class _PostNodeWidget extends StatelessWidget {
   final Set<int> collapsed;
   final void Function(int postId) onToggleCollapse;
   final void Function(int postId, String authorUsername) onReplyRequested;
+  final void Function(int postId) onReportRequested;
 
   @override
   Widget build(BuildContext context) {
@@ -300,10 +369,17 @@ class _PostNodeWidget extends StatelessWidget {
                                   style: Theme.of(context).textTheme.bodyMedium,
                                 ),
                                 const SizedBox(height: 6),
-                                // Actions row aligned to the right: reply then hide
+                                // Actions row aligned to the right: report, reply then hide
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
+                                    IconButton(
+                                      visualDensity: VisualDensity.compact,
+                                      tooltip: 'Report',
+                                      iconSize: 18,
+                                      onPressed: () => onReportRequested(node.post.id),
+                                      icon: const Icon(Icons.flag_outlined),
+                                    ),
                                     IconButton(
                                       visualDensity: VisualDensity.compact,
                                       tooltip: 'Reply',
@@ -353,6 +429,7 @@ class _PostNodeWidget extends StatelessWidget {
                 collapsed: collapsed,
                 onToggleCollapse: onToggleCollapse,
                 onReplyRequested: onReplyRequested,
+                onReportRequested: onReportRequested,
               ),
         ],
       ),
