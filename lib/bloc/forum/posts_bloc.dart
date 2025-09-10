@@ -14,6 +14,7 @@ class PostsBloc extends Bloc<PostsEvent, PostsState> {
     on<LoadPosts>(_onLoadPosts);
     on<CreatePost>(_onCreatePost);
     on<ReportPost>(_onReportPost);
+    on<DeletePost>(_onDeletePost);
   }
 
   final ForumService _forumService;
@@ -67,6 +68,23 @@ class PostsBloc extends Bloc<PostsEvent, PostsState> {
     try {
       await _forumService.reportPost(event.postId, ReportPostRequestDto(reason: event.reason));
       emit(current.copyWith(currentOperation: PostOperation.success('Report sent')));
+    } catch (e) {
+      final msg = e is DioException ? mapDioError(e) : kGenericErrorMessage;
+      emit(current.copyWith(currentOperation: PostOperation.error(msg)));
+    }
+  }
+
+  Future<void> _onDeletePost(DeletePost event, Emitter<PostsState> emit) async {
+    if (state is! PostsLoaded) {
+      add(LoadPosts(threadId: event.threadId));
+      return;
+    }
+    final current = state as PostsLoaded;
+    emit(current.copyWith(currentOperation: PostOperation.loading()));
+    try {
+      await _forumService.deletePost(event.postId);
+      final posts = await _forumService.getPostsByThread(event.threadId);
+      emit(PostsLoaded(posts: posts, currentOperation: PostOperation.success('Post deleted')));
     } catch (e) {
       final msg = e is DioException ? mapDioError(e) : kGenericErrorMessage;
       emit(current.copyWith(currentOperation: PostOperation.error(msg)));

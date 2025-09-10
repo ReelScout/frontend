@@ -29,3 +29,11 @@ class ReportPost extends PostsEvent {
   @override
   List<Object?> get props => [postId, reason];
 }
+
+class DeletePost extends PostsEvent {
+  const DeletePost({required this.threadId, required this.postId});
+  final int threadId;
+  final int postId;
+  @override
+  List<Object?> get props => [threadId, postId];
+}

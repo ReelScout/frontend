@@ -14,6 +14,10 @@ import 'package:frontend/dto/response/user_response_dto.dart';
 import 'package:frontend/services/user_lookup.dart';
 import 'package:frontend/config/injection_container.dart';
 import 'package:frontend/services/user_service.dart';
+import 'package:frontend/bloc/user_profile/user_profile_bloc.dart';
+import 'package:frontend/bloc/user_profile/user_profile_state.dart';
+import 'package:frontend/bloc/user_profile/user_profile_event.dart';
+import 'package:frontend/model/role.dart';
 
 class ThreadDetailPage extends HookWidget {
   const ThreadDetailPage({super.key, required this.threadId, required this.threadTitle, this.focusPostId});
@@ -27,6 +31,14 @@ class ThreadDetailPage extends HookWidget {
     final scrolled = useState<bool>(false);
     final users = useState<Map<int, UserResponseDto>>({});
     final userLookup = useMemoized(() => UserLookup(getIt<UserService>()));
+    final upState = context.watch<UserProfileBloc>().state;
+    final authState = context.watch<AuthBloc>().state;
+    useEffect(() {
+      if (authState is AuthSuccess && upState is! UserProfileLoaded) {
+        context.read<UserProfileBloc>().add(LoadUserProfile());
+      }
+      return null;
+    }, [authState is AuthSuccess]);
 
     // Ensure posts are loaded for this thread when entering the page
     useEffect(() {
@@ -160,6 +172,9 @@ class ThreadDetailPage extends HookWidget {
                     }
                     if (state is PostsLoaded) {
                       final roots = _buildPostTree(state.posts);
+                      final userProfileState = context.read<UserProfileBloc>().state;
+                      final canModerate = userProfileState is UserProfileLoaded &&
+                          (userProfileState.user.role == Role.moderator || userProfileState.user.role == Role.admin);
                       // Fetch missing users after this frame
                       WidgetsBinding.instance.addPostFrameCallback((_) async {
                         final ids = state.posts.map((p) => p.authorId).toSet()
@@ -237,6 +252,7 @@ class ThreadDetailPage extends HookWidget {
                                       }
                                       await _openComposerBottomSheet(context, threadId: threadId, parentId: postId, hint: 'Replying to @$author');
                                     },
+                                    canModerate: canModerate,
                                     onReportRequested: promptReport,
                                   ))
                               .toList(),
@@ -294,6 +310,7 @@ class _PostNodeWidget extends StatelessWidget {
     required this.onToggleCollapse,
     required this.onReplyRequested,
     required this.onReportRequested,
+    required this.canModerate,
   });
 
   final _PostNode node;
@@ -305,6 +322,7 @@ class _PostNodeWidget extends StatelessWidget {
   final void Function(int postId) onToggleCollapse;
   final void Function(int postId, String authorUsername) onReplyRequested;
   final void Function(int postId) onReportRequested;
+  final bool canModerate;
 
   @override
   Widget build(BuildContext context) {
@@ -370,10 +388,33 @@ class _PostNodeWidget extends StatelessWidget {
                                   style: Theme.of(context).textTheme.bodyMedium,
                                 ),
                                 const SizedBox(height: 6),
-                                // Actions row aligned to the right: report, reply then hide
+                                // Actions row aligned to the right: delete (if mod), report, reply then hide
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
+                                    if (canModerate)
+                                      IconButton(
+                                        visualDensity: VisualDensity.compact,
+                                        tooltip: 'Delete',
+                                        iconSize: 18,
+                                        onPressed: () async {
+                                          final confirm = await showDialog<bool>(
+                                            context: context,
+                                            builder: (ctx) => AlertDialog(
+                                              title: const Text('Delete post?'),
+                                              content: const Text('Children will be kept but detached.'),
+                                              actions: [
+                                                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                                                FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
+                                              ],
+                                            ),
+                                          );
+                                          if (confirm == true) {
+                                            context.read<PostsBloc>().add(DeletePost(threadId: node.post.threadId, postId: node.post.id));
+                                          }
+                                        },
+                                        icon: const Icon(Icons.delete_outline),
+                                      ),
                                     IconButton(
                                       visualDensity: VisualDensity.compact,
                                       tooltip: 'Report',
@@ -431,6 +472,7 @@ class _PostNodeWidget extends StatelessWidget {
                 onToggleCollapse: onToggleCollapse,
                 onReplyRequested: onReplyRequested,
                 onReportRequested: onReportRequested,
+                canModerate: canModerate,
               ),
         ],
       ),

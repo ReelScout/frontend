@@ -11,6 +11,10 @@ import 'package:frontend/bloc/auth/auth_bloc.dart';
 import 'package:frontend/bloc/auth/auth_state.dart';
 import 'package:frontend/screens/login_screen.dart';
 import 'package:frontend/utils/time_ago.dart';
+import 'package:frontend/bloc/user_profile/user_profile_bloc.dart';
+import 'package:frontend/bloc/user_profile/user_profile_event.dart';
+import 'package:frontend/bloc/user_profile/user_profile_state.dart';
+import 'package:frontend/model/role.dart';
 
 class ForumPage extends HookWidget {
   const ForumPage({super.key, required this.content});
@@ -25,6 +29,11 @@ class ForumPage extends HookWidget {
     // Ensure threads are loaded when entering the page
     useEffect(() {
       context.read<ThreadsBloc>().add(LoadThreads(contentId: content.id));
+      final authState = context.read<AuthBloc>().state;
+      final upState = context.read<UserProfileBloc>().state;
+      if (authState is AuthSuccess && upState is! UserProfileLoaded) {
+        context.read<UserProfileBloc>().add(LoadUserProfile());
+      }
       return null;
     }, [content.id]);
 
@@ -177,7 +186,11 @@ class ForumPage extends HookWidget {
                 }
                 return RefreshIndicator(
                   onRefresh: () async => context.read<ThreadsBloc>().add(LoadThreads(contentId: content.id)),
-                  child: ListView.separated(
+                  child: BlocBuilder<UserProfileBloc, UserProfileState>(
+                    builder: (context, upState) {
+                      final canModerate = upState is UserProfileLoaded &&
+                          (upState.user.role == Role.moderator || upState.user.role == Role.admin);
+                      return ListView.separated(
                     padding: const EdgeInsets.all(12),
                     itemCount: threads.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 8),
@@ -189,7 +202,33 @@ class ForumPage extends HookWidget {
                           subtitle: Text(
                             'by ${t.createdByUsername} • ${t.postCount} posts • ${timeAgo(t.updatedAt)}',
                           ),
-                          trailing: const Icon(Icons.chevron_right),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (canModerate)
+                                IconButton(
+                                  tooltip: 'Delete thread',
+                                  icon: const Icon(Icons.delete_outline),
+                                  onPressed: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        title: const Text('Delete thread?'),
+                                        content: const Text('This will remove the thread and all its posts.'),
+                                        actions: [
+                                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                                          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
+                                        ],
+                                      ),
+                                    );
+                                    if (confirm == true) {
+                                      context.read<ThreadsBloc>().add(DeleteThread(contentId: content.id, threadId: t.id));
+                                    }
+                                  },
+                                ),
+                              const Icon(Icons.chevron_right),
+                            ],
+                          ),
                           onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute<void>(
@@ -201,6 +240,8 @@ class ForumPage extends HookWidget {
                             );
                           },
                         ),
+                      );
+                    },
                       );
                     },
                   ),

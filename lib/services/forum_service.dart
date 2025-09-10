@@ -6,6 +6,7 @@ import 'package:frontend/dto/request/create_post_request_dto.dart';
 import 'package:frontend/dto/response/forum_thread_response_dto.dart';
 import 'package:frontend/dto/response/forum_post_response_dto.dart';
 import 'package:frontend/dto/request/report_post_request_dto.dart';
+import 'package:frontend/dto/response/custom_response_dto.dart';
 
 part 'generated/forum_service.g.dart';
 
@@ -36,4 +37,10 @@ abstract class ForumService {
     @Path('postId') int postId,
     @Body() ReportPostRequestDto dto,
   );
+
+  @DELETE('/threads/{threadId}')
+  Future<CustomResponseDto> deleteThread(@Path('threadId') int threadId);
+
+  @DELETE('/posts/{postId}')
+  Future<CustomResponseDto> deletePost(@Path('postId') int postId);
 }
