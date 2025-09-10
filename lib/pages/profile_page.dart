@@ -27,13 +27,12 @@ import 'package:frontend/bloc/friendship/friendship_bloc.dart';
 import 'package:frontend/bloc/friendship/friendship_event.dart';
 import 'package:frontend/bloc/friendship/friendship_state.dart';
 import 'package:frontend/pages/friends_page.dart';
-import 'package:frontend/components/verification_request_dialog.dart';
+import 'package:frontend/components/promotion_request_dialog.dart';
 import 'package:frontend/config/injection_container.dart';
-import 'package:frontend/services/verification_service.dart';
-import 'package:frontend/dto/request/verification_request_create_dto.dart';
-import 'package:dio/dio.dart';
+import 'package:frontend/services/promotion_service.dart';
+import 'package:frontend/dto/request/promotion_request_create_dto.dart';
 import 'package:frontend/model/role.dart';
-import 'package:frontend/pages/moderation/verification_requests_page.dart';
+import 'package:frontend/pages/moderation/promotion_requests_page.dart';
 
 class ProfilePage extends StatelessWidget {
   final UserResponseDto? viewingUser; // Optional user to view (if null, shows current user's profile)
@@ -476,32 +475,28 @@ class ProfilePage extends StatelessWidget {
                       onPressed: () async {
                         final message = await showDialog<String?>(
                           context: context,
-                          builder: (_) => const VerificationRequestDialog(),
+                          builder: (_) => const PromotionRequestDialog(),
                         );
                         if (!context.mounted || message == null) return;
 
                         try {
-                          final dio = getIt<Dio>();
-                          final service = VerificationService(
-                            dio,
-                            baseUrl: "${dio.options.baseUrl}/user/verification",
-                          );
-                          await service.requestVerification(
-                            VerificationRequestCreateDto(message: message.isEmpty ? null : message),
+                          final service = getIt<PromotionService>();
+                          await service.requestVerifiedPromotion(
+                            PromotionRequestCreateDto(message: message.isEmpty ? null : message),
                           );
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Verification request submitted')),
+                            const SnackBar(content: Text('Richiesta di verifica inviata')),
                           );
                         } catch (e) {
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Failed to submit request: $e')),
+                            SnackBar(content: Text('Invio richiesta fallito: $e')),
                           );
                         }
                       },
                       icon: const Icon(Icons.verified_user_outlined),
-                      label: const Text('Request verification'),
+                      label: const Text('Richiedi verifica'),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
@@ -513,21 +508,63 @@ class ProfilePage extends StatelessWidget {
                   const SizedBox(height: 12),
                 ],
 
-                // Moderation tools (only for MODERATOR)
+                // Request Promotion (only for VERIFIED_MEMBER role)
                 if (userProfileState is UserProfileLoaded &&
-                    userProfileState.user.role == Role.moderator) ...[
+                    userProfileState.user.role == Role.verifiedMember) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final message = await showDialog<String?>(
+                          context: context,
+                          builder: (_) => const PromotionRequestDialog(),
+                        );
+                        if (!context.mounted || message == null) return;
+
+                        try {
+                          final service = getIt<PromotionService>();
+                          await service.requestModeratorPromotion(
+                            PromotionRequestCreateDto(message: message.isEmpty ? null : message),
+                          );
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Promotion request submitted')),
+                          );
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to submit request: $e')),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.campaign_outlined),
+                      label: const Text('Request promotion'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                // Moderation tools (for MODERATOR and ADMIN)
+                if (userProfileState is UserProfileLoaded &&
+                    (userProfileState.user.role == Role.moderator || userProfileState.user.role == Role.admin)) ...[
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () {
                         Navigator.of(context).push(
                           MaterialPageRoute<void>(
-                            builder: (_) => const VerificationRequestsPage(),
+                            builder: (_) => const PromotionRequestsPage(),
                           ),
                         );
                       },
-                      icon: const Icon(Icons.verified_user),
-                      label: const Text('Verification requests'),
+                      icon: const Icon(Icons.manage_accounts),
+                      label: const Text('Role upgrade requests'),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(

@@ -19,6 +19,7 @@ import 'package:frontend/services/chat_service.dart' as _i832;
 import 'package:frontend/services/content_service.dart' as _i53;
 import 'package:frontend/services/forum_service.dart' as _i936;
 import 'package:frontend/services/friendship_service.dart' as _i946;
+import 'package:frontend/services/promotion_service.dart' as _i140;
 import 'package:frontend/services/search_service.dart' as _i1063;
 import 'package:frontend/services/token_service.dart' as _i768;
 import 'package:frontend/services/user_service.dart' as _i625;
@@ -81,6 +82,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.singleton<_i832.ChatService>(
       () => serviceModule.chatService(gh<_i361.Dio>()),
+    );
+    gh.singleton<_i140.PromotionService>(
+      () => serviceModule.promotionService(gh<_i361.Dio>()),
     );
     return this;
   }

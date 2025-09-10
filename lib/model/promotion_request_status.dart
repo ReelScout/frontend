@@ -1,7 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
 @JsonEnum()
-enum VerificationRequestStatus {
+enum PromotionRequestStatus {
   @JsonValue('PENDING')
   pending,
 

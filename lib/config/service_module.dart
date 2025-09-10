@@ -7,6 +7,7 @@ import 'package:frontend/services/watchlist_service.dart';
 import 'package:frontend/services/forum_service.dart';
 import 'package:frontend/services/friendship_service.dart';
 import 'package:frontend/services/chat_service.dart';
+import 'package:frontend/services/promotion_service.dart';
 import 'package:frontend/websocket/chat_realtime_service.dart';
 import 'package:frontend/websocket/realtime_core.dart';
 import 'package:frontend/websocket/content_realtime_service.dart';
@@ -49,4 +50,8 @@ abstract class ServiceModule {
 
   @singleton
   ContentRealtimeService contentRealtimeService(RealtimeCore core) => ContentRealtimeService(core);
+
+  @singleton
+  PromotionService promotionService(Dio dio) =>
+      PromotionService(dio, baseUrl: "${dio.options.baseUrl}/user/promotion");
 }
