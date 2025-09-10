@@ -5,7 +5,7 @@ import 'package:frontend/bloc/user_profile/user_profile_state.dart';
 import 'package:frontend/bloc/user_profile/user_profile_bloc.dart';
 import 'package:frontend/config/injection_container.dart';
 import 'package:frontend/dto/response/chat_message_response_dto.dart';
-import 'package:frontend/services/chat_realtime_service.dart';
+import 'package:frontend/websocket/chat_realtime_service.dart';
 import 'package:frontend/services/chat_service.dart';
 
 class DmChatPage extends StatefulWidget {

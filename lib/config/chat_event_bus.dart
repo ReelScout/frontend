@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:frontend/dto/response/chat_message_response_dto.dart';
-import 'package:frontend/services/chat_realtime_service.dart';
+import 'package:frontend/websocket/chat_realtime_service.dart';
 
 class ChatEventBus {
   final StreamController<ChatMessageResponseDto> _messageController =
@@ -32,4 +32,3 @@ class ChatEventBus {
 }
 
 final ChatEventBus chatEventBus = ChatEventBus();
-

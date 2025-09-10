@@ -103,6 +103,7 @@ class ThreadDetailPage extends HookWidget {
     return BlocListener<PostsBloc, PostsState>(
         listenWhen: (p, n) => n is PostsLoaded && n.currentOperation != null,
         listener: (context, state) {
+          if (!context.mounted) return;
           if (state is PostsLoaded && state.currentOperation != null) {
             final op = state.currentOperation!;
             if (!op.isLoading && op.message != null) {

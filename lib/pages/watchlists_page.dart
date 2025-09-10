@@ -29,6 +29,7 @@ class WatchlistsPage extends HookWidget {
       ),
       body: BlocConsumer<WatchlistBloc, WatchlistState>(
         listener: (context, state) {
+          if (!context.mounted) return;
           // Handle operation feedback with snackbars
           if (state is WatchlistLoaded && state.currentOperation != null) {
             final operation = state.currentOperation!;

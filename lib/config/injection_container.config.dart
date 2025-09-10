@@ -15,7 +15,6 @@ import 'package:frontend/config/dio_config.dart' as _i456;
 import 'package:frontend/config/service_module.dart' as _i316;
 import 'package:frontend/interceptor/token_interceptor.dart' as _i746;
 import 'package:frontend/services/auth_service.dart' as _i269;
-import 'package:frontend/services/chat_realtime_service.dart' as _i941;
 import 'package:frontend/services/chat_service.dart' as _i832;
 import 'package:frontend/services/content_service.dart' as _i53;
 import 'package:frontend/services/forum_service.dart' as _i936;
@@ -24,6 +23,9 @@ import 'package:frontend/services/search_service.dart' as _i1063;
 import 'package:frontend/services/token_service.dart' as _i768;
 import 'package:frontend/services/user_service.dart' as _i625;
 import 'package:frontend/services/watchlist_service.dart' as _i156;
+import 'package:frontend/websocket/chat_realtime_service.dart' as _i679;
+import 'package:frontend/websocket/content_realtime_service.dart' as _i363;
+import 'package:frontend/websocket/realtime_core.dart' as _i739;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
 
@@ -44,11 +46,17 @@ extension GetItInjectableX on _i174.GetIt {
       () => dioConfig.tokenInterceptor(gh<_i768.TokenService>()),
     );
     gh.singleton<_i361.Dio>(() => dioConfig.dio(gh<_i746.TokenInterceptor>()));
-    gh.singleton<_i941.ChatRealtimeService>(
-      () => serviceModule.chatRealtimeService(
+    gh.singleton<_i739.RealtimeCore>(
+      () => serviceModule.websocketCore(
         gh<_i768.TokenService>(),
         gh<_i361.Dio>(),
       ),
+    );
+    gh.singleton<_i679.ChatRealtimeService>(
+      () => serviceModule.chatRealtimeService(gh<_i739.RealtimeCore>()),
+    );
+    gh.singleton<_i363.ContentRealtimeService>(
+      () => serviceModule.contentRealtimeService(gh<_i739.RealtimeCore>()),
     );
     gh.singleton<_i269.AuthService>(
       () => serviceModule.authService(gh<_i361.Dio>()),

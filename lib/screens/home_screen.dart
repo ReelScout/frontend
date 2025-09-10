@@ -9,6 +9,8 @@ import 'package:frontend/pages/home_page.dart';
 import 'package:frontend/pages/profile_page.dart';
 import 'package:frontend/pages/chats_list_page.dart';
 import 'package:frontend/styles/app_colors.dart';
+import 'package:frontend/config/content_event_bus.dart';
+import 'package:frontend/pages/content_detail_page.dart';
 import 'package:frontend/screens/search_screen.dart';
 
 class HomeScreen extends HookWidget {
@@ -22,6 +24,31 @@ class HomeScreen extends HookWidget {
       ChatsListPage(),
       ProfilePage(),
     ]);
+
+    // Subscribe to content push events and show a SnackBar notification
+    useEffect(() {
+      final sub = contentEventBus.onNewContent.listen((content) {
+        if (!context.mounted) return;
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('New content: ${content.title}'),
+            action: SnackBarAction(
+              label: 'View',
+              onPressed: () {
+                if (!context.mounted) return;
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => ContentDetailPage(content: content),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      });
+      return sub.cancel;
+    }, const []);
 
     return BlocBuilder<NavigationBloc, NavigationState>(
       builder: (context, state) {

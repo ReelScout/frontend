@@ -36,6 +36,7 @@ class UpdateContentScreen extends HookWidget {
       ),
       body: BlocListener<ContentBloc, ContentState>(
         listener: (context, state) {
+          if (!context.mounted) return;
           if (state is ContentUpdateSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

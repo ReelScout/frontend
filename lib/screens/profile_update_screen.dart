@@ -41,6 +41,7 @@ class ProfileUpdateScreen extends HookWidget {
 
     return BlocListener<UserProfileBloc, UserProfileState>(
       listener: (context, state) {
+        if (!context.mounted) return;
         if (state is UserProfileUpdateSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

@@ -7,7 +7,9 @@ import 'package:frontend/services/watchlist_service.dart';
 import 'package:frontend/services/forum_service.dart';
 import 'package:frontend/services/friendship_service.dart';
 import 'package:frontend/services/chat_service.dart';
-import 'package:frontend/services/chat_realtime_service.dart';
+import 'package:frontend/websocket/chat_realtime_service.dart';
+import 'package:frontend/websocket/realtime_core.dart';
+import 'package:frontend/websocket/content_realtime_service.dart';
 import 'package:injectable/injectable.dart';
 import 'package:frontend/services/token_service.dart';
 
@@ -39,6 +41,12 @@ abstract class ServiceModule {
 
   // Realtime chat service needs API origin to derive WS endpoint
   @singleton
-  ChatRealtimeService chatRealtimeService(TokenService tokenService, Dio dio) =>
-      ChatRealtimeService(tokenService: tokenService, apiBaseUrl: dio.options.baseUrl);
+  RealtimeCore websocketCore(TokenService tokenService, Dio dio) =>
+      RealtimeCore(tokenService: tokenService, apiBaseUrl: dio.options.baseUrl);
+
+  @singleton
+  ChatRealtimeService chatRealtimeService(RealtimeCore core) => ChatRealtimeService(core);
+
+  @singleton
+  ContentRealtimeService contentRealtimeService(RealtimeCore core) => ContentRealtimeService(core);
 }
