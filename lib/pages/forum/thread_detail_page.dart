@@ -369,10 +369,26 @@ class _PostNodeWidget extends StatelessWidget {
                                 Row(
                                   children: [
                                     Flexible(
-                                      child: Text(
-                                        authorName,
-                                        style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                        overflow: TextOverflow.ellipsis,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Flexible(
+                                            child: Text(
+                                              authorName,
+                                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          if (user?.role == Role.verifiedMember) ...[
+                                            const SizedBox(width: 4),
+                                            Icon(
+                                              Icons.verified,
+                                              size: 14,
+                                              color: Theme.of(context).colorScheme.primary,
+                                              semanticLabel: 'Verified',
+                                            ),
+                                          ],
+                                        ],
                                       ),
                                     ),
                                     const SizedBox(width: 6),
@@ -530,7 +546,7 @@ Future<void> _promptSuspendUser(BuildContext context, int userId) async {
               const Text('Duration'),
               const SizedBox(height: 6),
               DropdownButtonFormField<int>(
-                value: days,
+                initialValue: days,
                 items: const [
                   DropdownMenuItem(value: 1, child: Text('24 hours')),
                   DropdownMenuItem(value: 7, child: Text('7 days')),
