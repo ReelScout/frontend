@@ -23,3 +23,10 @@ class CreateThread extends ThreadsEvent {
   List<Object?> get props => [contentId, request];
 }
 
+class DeleteThread extends ThreadsEvent {
+  const DeleteThread({required this.contentId, required this.threadId});
+  final int contentId;
+  final int threadId;
+  @override
+  List<Object?> get props => [contentId, threadId];
+}

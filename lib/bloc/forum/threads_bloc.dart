@@ -11,6 +11,7 @@ class ThreadsBloc extends Bloc<ThreadsEvent, ThreadsState> {
         super(const ThreadsInitial()) {
     on<LoadThreads>(_onLoadThreads);
     on<CreateThread>(_onCreateThread);
+    on<DeleteThread>(_onDeleteThread);
   }
 
   final ForumService _forumService;
@@ -44,5 +45,21 @@ class ThreadsBloc extends Bloc<ThreadsEvent, ThreadsState> {
       emit(current.copyWith(currentOperation: ThreadOperation.error(msg)));
     }
   }
-}
 
+  Future<void> _onDeleteThread(DeleteThread event, Emitter<ThreadsState> emit) async {
+    if (state is! ThreadsLoaded) {
+      add(LoadThreads(contentId: event.contentId));
+      return;
+    }
+    final current = state as ThreadsLoaded;
+    emit(current.copyWith(currentOperation: ThreadOperation.loading()));
+    try {
+      await _forumService.deleteThread(event.threadId);
+      final threads = await _forumService.getThreadsByContent(event.contentId);
+      emit(ThreadsLoaded(threads: threads, currentOperation: ThreadOperation.success('Thread deleted')));
+    } catch (e) {
+      final msg = e is DioException ? mapDioError(e) : kGenericErrorMessage;
+      emit(current.copyWith(currentOperation: ThreadOperation.error(msg)));
+    }
+  }
+}

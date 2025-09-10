@@ -6,6 +6,7 @@ import 'package:retrofit/retrofit.dart';
 import 'package:frontend/dto/request/user_password_change_request_dto.dart';
 import 'package:frontend/dto/request/user_request_dto.dart';
 import 'package:frontend/dto/response/user_response_dto.dart';
+import 'package:frontend/dto/request/suspend_user_request_dto.dart';
 
 part 'generated/user_service.g.dart';
 
@@ -27,4 +28,15 @@ abstract class UserService {
 
   @PUT('/update')
   Future<UserLoginResponseDto?> update(@Body() UserRequestDto userRequestDto);
+
+  @POST('/id/{id}/suspend')
+  Future<CustomResponseDto> suspendUser(
+    @Path('id') int id,
+    @Body() SuspendUserRequestDto dto,
+  );
+
+  @DELETE('/id/{id}/suspend')
+  Future<CustomResponseDto> unsuspendUser(
+    @Path('id') int id,
+  );
 }

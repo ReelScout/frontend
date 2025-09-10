@@ -14,6 +14,11 @@ import 'package:frontend/dto/response/user_response_dto.dart';
 import 'package:frontend/services/user_lookup.dart';
 import 'package:frontend/config/injection_container.dart';
 import 'package:frontend/services/user_service.dart';
+import 'package:frontend/bloc/user_profile/user_profile_bloc.dart';
+import 'package:frontend/bloc/user_profile/user_profile_state.dart';
+import 'package:frontend/bloc/user_profile/user_profile_event.dart';
+import 'package:frontend/model/role.dart';
+import 'package:frontend/dto/request/suspend_user_request_dto.dart';
 
 class ThreadDetailPage extends HookWidget {
   const ThreadDetailPage({super.key, required this.threadId, required this.threadTitle, this.focusPostId});
@@ -27,12 +32,86 @@ class ThreadDetailPage extends HookWidget {
     final scrolled = useState<bool>(false);
     final users = useState<Map<int, UserResponseDto>>({});
     final userLookup = useMemoized(() => UserLookup(getIt<UserService>()));
+    final upState = context.watch<UserProfileBloc>().state;
+    final authState = context.watch<AuthBloc>().state;
+    useEffect(() {
+      if (authState is AuthSuccess && upState is! UserProfileLoaded) {
+        context.read<UserProfileBloc>().add(LoadUserProfile());
+      }
+      return null;
+    }, [authState is AuthSuccess]);
 
     // Ensure posts are loaded for this thread when entering the page
     useEffect(() {
       context.read<PostsBloc>().add(LoadPosts(threadId: threadId));
       return null;
     }, [threadId]);
+
+    Future<void> promptReport(int postId) async {
+      final authState = context.read<AuthBloc>().state;
+      if (authState is! AuthSuccess) {
+        final go = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Login required'),
+            content: const Text('You need to login to report a post.'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+              FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Login')),
+            ],
+          ),
+        );
+        if (!context.mounted) return;
+        if (go == true) {
+          await Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+          );
+        }
+        if (!context.mounted) return;
+        if (context.read<AuthBloc>().state is! AuthSuccess) return;
+      }
+
+      final controller = TextEditingController();
+      final formKey = GlobalKey<FormState>();
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Report post'),
+          content: Form(
+            key: formKey,
+            child: TextFormField(
+              controller: controller,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                labelText: 'Reason',
+                hintText: 'Why is this inappropriate?',
+              ),
+              validator: (v) => (v == null || v.trim().isEmpty) ? 'Reason is required' : null,
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+            BlocBuilder<PostsBloc, PostsState>(
+              builder: (context, state) {
+                final isLoading = state is PostsLoaded && state.currentOperation?.isLoading == true;
+                return FilledButton(
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
+                          context.read<PostsBloc>().add(ReportPost(postId: postId, reason: controller.text.trim()));
+                          Navigator.of(ctx).pop();
+                        },
+                  child: isLoading
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Send'),
+                );
+              },
+            ),
+          ],
+        ),
+      );
+    }
 
     return BlocListener<PostsBloc, PostsState>(
         listenWhen: (p, n) => n is PostsLoaded && n.currentOperation != null,
@@ -94,6 +173,9 @@ class ThreadDetailPage extends HookWidget {
                     }
                     if (state is PostsLoaded) {
                       final roots = _buildPostTree(state.posts);
+                      final userProfileState = context.read<UserProfileBloc>().state;
+                      final canModerate = userProfileState is UserProfileLoaded &&
+                          (userProfileState.user.role == Role.moderator || userProfileState.user.role == Role.admin);
                       // Fetch missing users after this frame
                       WidgetsBinding.instance.addPostFrameCallback((_) async {
                         final ids = state.posts.map((p) => p.authorId).toSet()
@@ -171,6 +253,8 @@ class ThreadDetailPage extends HookWidget {
                                       }
                                       await _openComposerBottomSheet(context, threadId: threadId, parentId: postId, hint: 'Replying to @$author');
                                     },
+                                    canModerate: canModerate,
+                                    onReportRequested: promptReport,
                                   ))
                               .toList(),
                         ),
@@ -226,6 +310,8 @@ class _PostNodeWidget extends StatelessWidget {
     required this.collapsed,
     required this.onToggleCollapse,
     required this.onReplyRequested,
+    required this.onReportRequested,
+    required this.canModerate,
   });
 
   final _PostNode node;
@@ -236,6 +322,8 @@ class _PostNodeWidget extends StatelessWidget {
   final Set<int> collapsed;
   final void Function(int postId) onToggleCollapse;
   final void Function(int postId, String authorUsername) onReplyRequested;
+  final void Function(int postId) onReportRequested;
+  final bool canModerate;
 
   @override
   Widget build(BuildContext context) {
@@ -301,10 +389,68 @@ class _PostNodeWidget extends StatelessWidget {
                                   style: Theme.of(context).textTheme.bodyMedium,
                                 ),
                                 const SizedBox(height: 6),
-                                // Actions row aligned to the right: reply then hide
+                                // Actions row aligned to the right: delete (if mod), moderation, report, reply then hide
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
+                                    if (canModerate)
+                                      IconButton(
+                                        visualDensity: VisualDensity.compact,
+                                        tooltip: 'Delete',
+                                        iconSize: 18,
+                                        onPressed: () async {
+                                          final confirm = await showDialog<bool>(
+                                            context: context,
+                                            builder: (ctx) => AlertDialog(
+                                              title: const Text('Delete post?'),
+                                              content: const Text('Children will be kept but detached.'),
+                                              actions: [
+                                                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                                                FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
+                                              ],
+                                            ),
+                                          );
+                                          if (confirm == true) {
+                                            context.read<PostsBloc>().add(DeletePost(threadId: node.post.threadId, postId: node.post.id));
+                                          }
+                                        },
+                                        icon: const Icon(Icons.delete_outline),
+                                      ),
+                                    if (canModerate)
+                                      PopupMenuButton<String>(
+                                        tooltip: 'Moderation',
+                                        itemBuilder: (ctx) => const [
+                                          PopupMenuItem(value: 'suspend', child: Text('Suspend author')),
+                                          PopupMenuItem(value: 'unsuspend', child: Text('Unsuspend author')),
+                                        ],
+                                        onSelected: (value) async {
+                                          if (value == 'suspend') {
+                                            await _promptSuspendUser(context, node.post.authorId);
+                                          } else if (value == 'unsuspend') {
+                                            final userService = getIt<UserService>();
+                                            try {
+                                              final res = await userService.unsuspendUser(node.post.authorId);
+                                              if (!context.mounted) return;
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(content: Text(res.message), behavior: SnackBarBehavior.floating),
+                                              );
+                                            } catch (e) {
+                                              if (!context.mounted) return;
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(content: Text('Failed to unsuspend user'), behavior: SnackBarBehavior.floating),
+                                              );
+                                            }
+                                          }
+                                        },
+                                        icon: const Icon(Icons.shield_outlined, size: 18),
+                                      ),
+                                    IconButton(
+                                      visualDensity: VisualDensity.compact,
+                                      tooltip: 'Report',
+                                      iconSize: 18,
+                                      onPressed: () => onReportRequested(node.post.id),
+                                      icon: const Icon(Icons.flag_outlined),
+                                    ),
                                     IconButton(
                                       visualDensity: VisualDensity.compact,
                                       tooltip: 'Reply',
@@ -354,11 +500,87 @@ class _PostNodeWidget extends StatelessWidget {
                 collapsed: collapsed,
                 onToggleCollapse: onToggleCollapse,
                 onReplyRequested: onReplyRequested,
+                onReportRequested: onReportRequested,
+                canModerate: canModerate,
               ),
         ],
       ),
     );
   }
+}
+
+Future<void> _promptSuspendUser(BuildContext context, int userId) async {
+  final userService = getIt<UserService>();
+  final formKey = GlobalKey<FormState>();
+  final reasonController = TextEditingController();
+  int days = 1;
+  bool loading = false;
+  await showDialog<void>(
+    context: context,
+    barrierDismissible: !loading,
+    builder: (ctx) => StatefulBuilder(builder: (ctx, setState) {
+      return AlertDialog(
+        title: const Text('Suspend user'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Duration'),
+              const SizedBox(height: 6),
+              DropdownButtonFormField<int>(
+                value: days,
+                items: const [
+                  DropdownMenuItem(value: 1, child: Text('24 hours')),
+                  DropdownMenuItem(value: 7, child: Text('7 days')),
+                  DropdownMenuItem(value: 30, child: Text('30 days')),
+                ],
+                onChanged: loading ? null : (v) => setState(() => days = v ?? 1),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: reasonController,
+                decoration: const InputDecoration(labelText: 'Reason (optional)'),
+                maxLines: 2,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: loading ? null : () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: loading
+                ? null
+                : () async {
+                    setState(() => loading = true);
+                    try {
+                      final until = DateTime.now().add(Duration(days: days));
+                      final res = await userService.suspendUser(
+                        userId,
+                        SuspendUserRequestDto(until: until, reason: reasonController.text.trim().isEmpty ? null : reasonController.text.trim()),
+                      );
+                      if (!context.mounted) return;
+                      Navigator.of(ctx).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(res.message), behavior: SnackBarBehavior.floating),
+                      );
+                    } catch (e) {
+                      setState(() => loading = false);
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Failed to suspend user'), behavior: SnackBarBehavior.floating),
+                      );
+                    }
+                  },
+            child: loading
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Text('Suspend'),
+          ),
+        ],
+      );
+    }),
+  );
 }
 
 Future<void> _openComposerBottomSheet(
