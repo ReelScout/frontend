@@ -33,6 +33,7 @@ import 'package:frontend/services/promotion_service.dart';
 import 'package:frontend/dto/request/promotion_request_create_dto.dart';
 import 'package:frontend/model/role.dart';
 import 'package:frontend/pages/moderation/promotion_requests_page.dart';
+import 'package:frontend/pages/moderation/reported_users_page.dart';
 
 class ProfilePage extends StatelessWidget {
   final UserResponseDto? viewingUser; // Optional user to view (if null, shows current user's profile)
@@ -565,6 +566,30 @@ class ProfilePage extends StatelessWidget {
                       },
                       icon: const Icon(Icons.manage_accounts),
                       label: const Text('Role upgrade requests'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                // Admin-only: Reported users (moderator reports)
+                if (userProfileState is UserProfileLoaded && userProfileState.user.role == Role.admin) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const ReportedUsersPage(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.report_gmailerrorred_outlined),
+                      label: const Text('Reported users'),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
