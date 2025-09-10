@@ -18,6 +18,7 @@ import 'package:frontend/bloc/user_profile/user_profile_bloc.dart';
 import 'package:frontend/bloc/user_profile/user_profile_state.dart';
 import 'package:frontend/bloc/user_profile/user_profile_event.dart';
 import 'package:frontend/model/role.dart';
+import 'package:frontend/dto/request/suspend_user_request_dto.dart';
 
 class ThreadDetailPage extends HookWidget {
   const ThreadDetailPage({super.key, required this.threadId, required this.threadTitle, this.focusPostId});
@@ -388,7 +389,7 @@ class _PostNodeWidget extends StatelessWidget {
                                   style: Theme.of(context).textTheme.bodyMedium,
                                 ),
                                 const SizedBox(height: 6),
-                                // Actions row aligned to the right: delete (if mod), report, reply then hide
+                                // Actions row aligned to the right: delete (if mod), moderation, report, reply then hide
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
@@ -414,6 +415,34 @@ class _PostNodeWidget extends StatelessWidget {
                                           }
                                         },
                                         icon: const Icon(Icons.delete_outline),
+                                      ),
+                                    if (canModerate)
+                                      PopupMenuButton<String>(
+                                        tooltip: 'Moderation',
+                                        itemBuilder: (ctx) => const [
+                                          PopupMenuItem(value: 'suspend', child: Text('Suspend author')),
+                                          PopupMenuItem(value: 'unsuspend', child: Text('Unsuspend author')),
+                                        ],
+                                        onSelected: (value) async {
+                                          if (value == 'suspend') {
+                                            await _promptSuspendUser(context, node.post.authorId);
+                                          } else if (value == 'unsuspend') {
+                                            final userService = getIt<UserService>();
+                                            try {
+                                              final res = await userService.unsuspendUser(node.post.authorId);
+                                              if (!context.mounted) return;
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(content: Text(res.message), behavior: SnackBarBehavior.floating),
+                                              );
+                                            } catch (e) {
+                                              if (!context.mounted) return;
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(content: Text('Failed to unsuspend user'), behavior: SnackBarBehavior.floating),
+                                              );
+                                            }
+                                          }
+                                        },
+                                        icon: const Icon(Icons.shield_outlined, size: 18),
                                       ),
                                     IconButton(
                                       visualDensity: VisualDensity.compact,
@@ -478,6 +507,80 @@ class _PostNodeWidget extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _promptSuspendUser(BuildContext context, int userId) async {
+  final userService = getIt<UserService>();
+  final formKey = GlobalKey<FormState>();
+  final reasonController = TextEditingController();
+  int days = 1;
+  bool loading = false;
+  await showDialog<void>(
+    context: context,
+    barrierDismissible: !loading,
+    builder: (ctx) => StatefulBuilder(builder: (ctx, setState) {
+      return AlertDialog(
+        title: const Text('Suspend user'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Duration'),
+              const SizedBox(height: 6),
+              DropdownButtonFormField<int>(
+                value: days,
+                items: const [
+                  DropdownMenuItem(value: 1, child: Text('24 hours')),
+                  DropdownMenuItem(value: 7, child: Text('7 days')),
+                  DropdownMenuItem(value: 30, child: Text('30 days')),
+                ],
+                onChanged: loading ? null : (v) => setState(() => days = v ?? 1),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: reasonController,
+                decoration: const InputDecoration(labelText: 'Reason (optional)'),
+                maxLines: 2,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: loading ? null : () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: loading
+                ? null
+                : () async {
+                    setState(() => loading = true);
+                    try {
+                      final until = DateTime.now().add(Duration(days: days));
+                      final res = await userService.suspendUser(
+                        userId,
+                        SuspendUserRequestDto(until: until, reason: reasonController.text.trim().isEmpty ? null : reasonController.text.trim()),
+                      );
+                      if (!context.mounted) return;
+                      Navigator.of(ctx).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(res.message), behavior: SnackBarBehavior.floating),
+                      );
+                    } catch (e) {
+                      setState(() => loading = false);
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Failed to suspend user'), behavior: SnackBarBehavior.floating),
+                      );
+                    }
+                  },
+            child: loading
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Text('Suspend'),
+          ),
+        ],
+      );
+    }),
+  );
 }
 
 Future<void> _openComposerBottomSheet(
