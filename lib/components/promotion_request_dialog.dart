@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class VerificationRequestDialog extends StatefulWidget {
-  const VerificationRequestDialog({super.key});
+class PromotionRequestDialog extends StatefulWidget {
+  const PromotionRequestDialog({super.key});
 
   @override
-  State<VerificationRequestDialog> createState() => _VerificationRequestDialogState();
+  State<PromotionRequestDialog> createState() => _PromotionRequestDialogState();
 }
 
-class _VerificationRequestDialogState extends State<VerificationRequestDialog> {
+class _PromotionRequestDialogState extends State<PromotionRequestDialog> {
   final _controller = TextEditingController();
   bool _submitting = false;
 
@@ -26,7 +26,7 @@ class _VerificationRequestDialogState extends State<VerificationRequestDialog> {
         children: [
           const Align(
             alignment: Alignment.centerLeft,
-            child: Text('Optional message for moderators'),
+            child: Text('Optional message for superiors:'),
           ),
           const SizedBox(height: 8),
           TextField(
