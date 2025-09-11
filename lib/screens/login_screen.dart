@@ -224,25 +224,6 @@ class LoginScreen extends HookWidget {
                   );
                 },
               ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Forgot password feature coming soon!'),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    'Forgot Password?',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-              ),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: isLoading ? null : onLogin,
