@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:frontend/dto/request/content_request_dto.dart';
 import 'package:frontend/dto/response/content_response_dto.dart';
 import 'package:frontend/dto/response/custom_response_dto.dart';
+import 'package:frontend/dto/response/content_stats_row_dto.dart';
 
 part 'generated/content_service.g.dart';
 
@@ -19,6 +20,9 @@ abstract class ContentService {
 
   @GET('/my-contents')
   Future<List<ContentResponseDto>> getMyContents();
+
+  @GET('/my-contents/stats')
+  Future<List<ContentStatsRowDto>> getMyContentsStats();
 
   @PUT('/update/{id}')
   Future<ContentResponseDto> updateContent(@Path('id') int id, @Body() ContentRequestDto contentRequestDto);

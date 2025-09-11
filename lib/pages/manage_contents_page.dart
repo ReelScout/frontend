@@ -165,10 +165,14 @@ class ManageContentsPage extends HookWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
+          final bloc = context.read<ContentBloc>();
           await Navigator.push(
             context,
             MaterialPageRoute<void>(
-              builder: (context) => const AddContentScreen(),
+              builder: (context) => BlocProvider.value(
+                value: bloc,
+                child: const AddContentScreen(),
+              ),
             ),
           );
 
@@ -296,7 +300,10 @@ class ManageContentsPage extends HookWidget {
     await Navigator.push(
       context,
       MaterialPageRoute<void>(
-        builder: (context) => UpdateContentScreen(content: content),
+        builder: (context) => BlocProvider.value(
+          value: contentBloc,
+          child: UpdateContentScreen(content: content),
+        ),
       ),
     );
 

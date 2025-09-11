@@ -34,6 +34,8 @@ import 'package:frontend/dto/request/promotion_request_create_dto.dart';
 import 'package:frontend/model/role.dart';
 import 'package:frontend/pages/moderation/promotion_requests_page.dart';
 import 'package:frontend/pages/moderation/reported_users_page.dart';
+import 'package:frontend/bloc/content/content_bloc.dart';
+import 'package:frontend/services/content_service.dart';
 
 class ProfilePage extends StatelessWidget {
   final UserResponseDto? viewingUser; // Optional user to view (if null, shows current user's profile)
@@ -638,7 +640,12 @@ class ProfilePage extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute<void>(
-                            builder: (context) => const ManageContentsPage(),
+                            builder: (context) => BlocProvider<ContentBloc>(
+                              create: (_) => ContentBloc(
+                                contentService: getIt<ContentService>(),
+                              ),
+                              child: const ManageContentsPage(),
+                            ),
                           ),
                         );
                       },
