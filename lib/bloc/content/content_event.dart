@@ -67,3 +67,5 @@ class DeleteContentRequested extends ContentEvent {
   @override
   List<Object?> get props => [contentId];
 }
+
+// Stats events moved to ContentStatsBloc

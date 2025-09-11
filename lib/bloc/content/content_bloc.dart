@@ -46,6 +46,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     }
   }
 
+
   Future<void> _onUpdateContentRequested(
     UpdateContentRequested event,
     Emitter<ContentState> emit,

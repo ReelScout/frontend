@@ -8,6 +8,14 @@ import 'package:frontend/components/bottom_navbar.dart';
 import 'package:frontend/pages/home_page.dart';
 import 'package:frontend/pages/profile_page.dart';
 import 'package:frontend/pages/chats_list_page.dart';
+import 'package:frontend/pages/my_contents_stats_page.dart';
+import 'package:frontend/bloc/user_profile/user_profile_bloc.dart';
+import 'package:frontend/bloc/user_profile/user_profile_state.dart';
+import 'package:frontend/bloc/user_profile/user_profile_event.dart';
+import 'package:frontend/bloc/auth/auth_bloc.dart';
+import 'package:frontend/bloc/auth/auth_state.dart';
+import 'package:frontend/bloc/auth/auth_event.dart';
+import 'package:frontend/model/role.dart';
 import 'package:frontend/styles/app_colors.dart';
 import 'package:frontend/config/content_event_bus.dart';
 import 'package:frontend/pages/content_detail_page.dart';
@@ -18,12 +26,38 @@ class HomeScreen extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screens = useMemoized(() => const [
-      HomePage(),
-      SearchScreen(),
-      ChatsListPage(),
-      ProfilePage(),
-    ]);
+    // React to auth changes to keep user profile in sync
+    useEffect(() {
+      final authSub = context.read<AuthBloc>().stream.listen((state) {
+        if (!context.mounted) return;
+        if (state is AuthSuccess) {
+          context.read<UserProfileBloc>().add(LoadUserProfile());
+        } else if (state is AuthLoggedOut) {
+          context.read<UserProfileBloc>().add(ClearUserProfile());
+        }
+      });
+      return authSub.cancel;
+    }, const []);
+
+    // Also perform an immediate check based on current auth state
+    useEffect(() {
+      final authState = context.read<AuthBloc>().state;
+      if (authState is AuthSuccess) {
+        context.read<UserProfileBloc>().add(LoadUserProfile());
+      }
+      return null;
+    }, const []);
+
+    final userProfileState = context.watch<UserProfileBloc>().state;
+    final isProductionCompany = userProfileState is UserProfileLoaded &&
+        userProfileState.user.role == Role.productionCompany;
+
+    final screens = [
+      const HomePage(),
+      const SearchScreen(),
+      if (isProductionCompany) const MyContentsStatsPage() else const ChatsListPage(),
+      const ProfilePage(),
+    ];
 
     // Subscribe to content push events and show a SnackBar notification
     useEffect(() {
@@ -63,6 +97,7 @@ class HomeScreen extends HookWidget {
             onItemTapped: (index) {
               context.read<NavigationBloc>().add(TabSelected(index: index));
             },
+            isProductionCompany: isProductionCompany,
           ),
         );
       },

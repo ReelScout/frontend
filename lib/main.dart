@@ -26,6 +26,7 @@ import 'package:frontend/websocket/content_realtime_service.dart';
 import 'package:frontend/config/chat_event_bus.dart';
 import 'package:frontend/config/content_event_bus.dart';
 import 'package:frontend/config/unread_badge.dart';
+import 'package:frontend/bloc/content_stats/content_stats_bloc.dart';
 
 void main() {
   configureDependencies();
@@ -70,6 +71,11 @@ class ReelScoutApp extends StatelessWidget {
         BlocProvider<SearchBloc>(
           create: (context) => SearchBloc(
             searchService: getIt<SearchService>(),
+          ),
+        ),
+        BlocProvider<ContentStatsBloc>(
+          create: (context) => ContentStatsBloc(
+            contentService: getIt<ContentService>(),
           ),
         ),
         BlocProvider<WatchlistBloc>(
