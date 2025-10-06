@@ -12,7 +12,6 @@ class ContentEventBus {
   StreamSubscription<ContentResponseDto>? _contentSub;
 
   Future<void> attach(ContentRealtimeService realtime) async {
-    await realtime.connect();
     _contentSub ??= realtime.subscribeNewContent().listen((event) {
       if (!_newContentController.isClosed) {
         _newContentController.add(event);

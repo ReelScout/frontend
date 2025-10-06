@@ -12,7 +12,6 @@ class ChatEventBus {
   StreamSubscription<ChatMessageResponseDto>? _dmSub;
 
   Future<void> attach(ChatRealtimeService realtime) async {
-    await realtime.connect();
     _dmSub ??= realtime.subscribeDirect().listen((event) {
       if (!_messageController.isClosed) {
         _messageController.add(event);

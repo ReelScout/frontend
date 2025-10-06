@@ -99,7 +99,8 @@ class ReelScoutApp extends StatelessWidget {
         listener: (context, state) async {
           final realtime = getIt<ChatRealtimeService>();
           if (state is AuthSuccess) {
-            await chatEventBus.attach(realtime); // connects + subscribes globally
+            await realtime.connect(); // single global connect when logged in
+            await chatEventBus.attach(realtime);
             await contentEventBus.attach(getIt<ContentRealtimeService>());
           } else if (state is AuthLoggedOut) {
             chatEventBus.detach();

@@ -24,14 +24,12 @@ class ChatRealtimeService {
   Stream<ChatMessageResponseDto> subscribeDirect() {
     _dmController ??= StreamController.broadcast();
     final controller = _dmController!;
-
-    if (_core.isConnected && !_dmSubscribed) {
+    if (!_dmSubscribed) {
       _core.subscribeRaw('/user/queue/dm').listen((json) {
         controller.add(ChatMessageResponseDto.fromJson(json));
       });
       _dmSubscribed = true;
     }
-
     return controller.stream;
   }
 

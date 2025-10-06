@@ -25,6 +25,12 @@ class _DmChatPageState extends State<DmChatPage> {
   bool _connecting = true;
   bool _atBottom = true;
   int _newSinceScroll = 0;
+  // Paging state for older messages (backend returns DESC by page)
+  static const int _pageSize = 50;
+  int _nextPage = 1; // we will fetch page 0 initially, then 1,2,... for older
+  bool _hasMoreOlder = true;
+  bool _loadingOlder = false;
+  
 
   late final ChatRealtimeService _realtime = getIt<ChatRealtimeService>();
   late final ChatService _chatService = getIt<ChatService>();
@@ -44,38 +50,38 @@ class _DmChatPageState extends State<DmChatPage> {
 
   Future<void> _init() async {
     try {
-      // Load recent DM history with peer
-      final page = await _chatService.getDirectHistory(widget.peerUsername, 0, 50);
+      // Load recent DM history with peer (backend returns DESC: newest-first)
+      final page = await _chatService.getDirectHistory(widget.peerUsername, 0, _pageSize);
       setState(() {
         _messages
           ..clear()
-          ..addAll(page.content); // backend returns ascending; keep ascending so new go to bottom
+          // Keep UI ascending so new live messages append to bottom
+          ..addAll(page.content.reversed);
+        _hasMoreOlder = !page.last;
+        _nextPage = 1;
       });
-
-      await _realtime.connect(onConnected: () {
+      
+      // Connection is managed globally on login; just attach listener immediately.
+      if (_realtime.isConnected) {
         setState(() => _connecting = false);
-        _dmSub = _realtime.subscribeDirect().listen((event) {
-          // Only messages in this conversation: sent by peer or sent to peer
-          if (event.sender == widget.peerUsername || event.recipient == widget.peerUsername) {
-            final isMine = event.sender == _myUsername;
-            setState(() {
-              _messages.add(event);
-              if (!_atBottom && !isMine) {
-                _newSinceScroll += 1;
-              }
-            });
-            if (_atBottom || isMine) {
-              _scrollToBottom();
+      }
+      _dmSub ??= _realtime.subscribeDirect().listen((event) {
+        // Only messages in this conversation: sent by peer or sent to peer
+        if (event.sender == widget.peerUsername || event.recipient == widget.peerUsername) {
+          final isMine = event.sender == _myUsername;
+          setState(() {
+            _messages.add(event);
+            if (!_atBottom && !isMine) {
+              _newSinceScroll += 1;
             }
+          });
+          if (_atBottom || isMine) {
+            _scrollToBottom();
           }
-        });
-      }, onError: (err) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Chat connection error: $err')),
-          );
         }
       });
+      // Ensure we start anchored at bottom after initial load builds
+      _scrollToBottom();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -89,6 +95,10 @@ class _DmChatPageState extends State<DmChatPage> {
     if (!_scrollController.hasClients) return;
     final pos = _scrollController.position;
     final isNearBottom = pos.pixels >= (pos.maxScrollExtent - 24);
+    // Load older when near the top
+    if (pos.pixels <= 24) {
+      _loadOlder();
+    }
     if (isNearBottom && !_atBottom) {
       setState(() {
         _atBottom = true;
@@ -101,13 +111,41 @@ class _DmChatPageState extends State<DmChatPage> {
     }
   }
 
+  Future<void> _loadOlder() async {
+    if (_loadingOlder || !_hasMoreOlder) return;
+    _loadingOlder = true;
+    try {
+      final beforeMax = _scrollController.hasClients ? _scrollController.position.maxScrollExtent : null;
+      final beforePixels = _scrollController.hasClients ? _scrollController.position.pixels : null;
+      final page = await _chatService.getDirectHistory(widget.peerUsername, _nextPage, _pageSize);
+      final olderAsc = page.content.reversed.toList();
+      if (olderAsc.isNotEmpty) {
+        setState(() {
+          _messages.insertAll(0, olderAsc);
+        });
+        // Preserve viewport position after prepending
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients && beforeMax != null && beforePixels != null) {
+            final afterMax = _scrollController.position.maxScrollExtent;
+            final delta = afterMax - beforeMax;
+            _scrollController.jumpTo(beforePixels + delta);
+          }
+        });
+      }
+      _hasMoreOlder = !page.last;
+      _nextPage += 1;
+    } catch (_) {
+      // swallow; optional: show a toast/snackbar
+    } finally {
+      _loadingOlder = false;
+    }
+  }
+
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.animateTo(
+        _scrollController.jumpTo(
           _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOut,
         );
       }
     });
@@ -147,9 +185,24 @@ class _DmChatPageState extends State<DmChatPage> {
               children: [
                 ListView.builder(
                   controller: _scrollController,
-                  itemCount: _messages.length + (hasMarker ? 1 : 0),
+                  itemCount: _messages.length + (hasMarker ? 1 : 0) + (_loadingOlder ? 1 : 0),
                   itemBuilder: (context, index) {
-                    if (hasMarker && index == markerIndex) {
+                    // Optional loading older indicator at the very top
+                    if (_loadingOlder && index == 0) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12.0),
+                        child: Center(
+                          child: SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                      );
+                    }
+
+                    final topOffset = _loadingOlder ? 1 : 0;
+                    if (hasMarker && index == (markerIndex ?? 0) + topOffset) {
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: Row(
@@ -164,8 +217,67 @@ class _DmChatPageState extends State<DmChatPage> {
                       );
                     }
 
-                    final msgIndex = (hasMarker && index > (markerIndex ?? 0)) ? index - 1 : index;
+                    final adjustedIndex = index - topOffset;
+                    final msgIndex = (hasMarker && adjustedIndex > (markerIndex ?? 0)) ? adjustedIndex - 1 : adjustedIndex;
                     final m = _messages[msgIndex];
+
+                    //if current current index message day is different from previous message day, show date header
+                    if (msgIndex > 0) {
+                      final prev = _messages[msgIndex - 1];
+                      if (m.timestamp.day != prev.timestamp.day ||
+                          m.timestamp.month != prev.timestamp.month ||
+                          m.timestamp.year != prev.timestamp.year) {
+                        return Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Row(
+                                children: [
+                                  const Expanded(child: Divider(thickness: 1)),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${m.timestamp.day}/${m.timestamp.month}/${m.timestamp.year}',
+                                    style: Theme.of(context).textTheme.labelMedium,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Expanded(child: Divider(thickness: 1)),
+                                ],
+                              ),
+                            ),
+                            Align(
+                              alignment: m.sender == _myUsername ? Alignment.centerRight : Alignment.centerLeft,
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: m.sender == _myUsername
+                                      ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
+                                      : Colors.grey.shade200,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (m.sender != _myUsername)
+                                      Text(
+                                        m.sender,
+                                        style: Theme.of(context).textTheme.labelSmall,
+                                      ),
+                                    Text(m.content),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      TimeOfDay.fromDateTime(m.timestamp.toLocal()).format(context),
+                                      style: Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                    }
+
                     final isMine = m.sender == _myUsername;
                     return Align(
                       alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,

@@ -57,3 +57,7 @@ abstract class DioConfig {
     return dio;
   }
 }
+/// Centralized Dio configuration (timeouts, interceptors, base options).
+///
+/// Import this where an HTTP client is needed to ensure consistent
+/// networking behavior across the app.
